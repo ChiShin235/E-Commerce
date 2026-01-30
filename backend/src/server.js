@@ -20,7 +20,7 @@ import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 import { authenticateToken } from "./middleware/authMiddleware.js";
-import { requireAdmin } from "./middleware/roleMiddleware.js";
+import { requireAdmin, requirePermission } from "./middleware/roleMiddleware.js";
 
 dotenv.config();
 
@@ -79,8 +79,8 @@ app.use("/api/recommendations", authenticateToken, requireAdmin, aiRecommendatio
 app.use("/api/chatbot-logs", authenticateToken, requireAdmin, chatbotLogRoutes);
 app.use("/api/carts", authenticateToken, requireAdmin, cartRoutes);
 app.use("/api/cart-items", authenticateToken, requireAdmin, cartItemRoutes);
-app.use("/api/orders", authenticateToken, requireAdmin, orderRoutes);
-app.use("/api/order-items", authenticateToken, requireAdmin, orderItemRoutes);
+app.use("/api/orders", authenticateToken, requirePermission("manage_orders"), orderRoutes);
+app.use("/api/order-items", authenticateToken, requirePermission("manage_orders"), orderItemRoutes);
 app.use("/api/payments", authenticateToken, requireAdmin, paymentRoutes);
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

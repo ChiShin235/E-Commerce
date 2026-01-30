@@ -14,6 +14,26 @@ const seedAdmin = async () => {
     try {
         await connectDB();
 
+        const defaultPermissions = [
+            { key: 'manage_products', description: 'Manage products' },
+            { key: 'manage_orders', description: 'Manage orders' },
+        ];
+
+        await Promise.all(
+            defaultPermissions.map((permission) =>
+                Permission.findOneAndUpdate(
+                    { key: permission.key },
+                    { $setOnInsert: permission },
+                    { new: true, upsert: true }
+                )
+            )
+        );
+
+        const permissionDocs = await Permission.find({
+            key: { $in: defaultPermissions.map((p) => p.key) },
+        });
+        const permissionByKey = new Map(permissionDocs.map((p) => [p.key, p._id]));
+
         const allPermissions = await Permission.find();
         const adminRole = await Role.findOneAndUpdate(
             { name: 'admin' },
@@ -26,6 +46,27 @@ const seedAdmin = async () => {
             adminRole.permissions = permissionIds;
             await adminRole.save();
         }
+
+        const managerPermissionIds = [permissionByKey.get('manage_products')].filter(Boolean);
+        const staffPermissionIds = [permissionByKey.get('manage_orders')].filter(Boolean);
+
+        await Role.findOneAndUpdate(
+            { name: 'manager' },
+            {
+                $set: { description: 'manager', permissions: managerPermissionIds },
+                $setOnInsert: { name: 'manager' },
+            },
+            { new: true, upsert: true }
+        );
+
+        await Role.findOneAndUpdate(
+            { name: 'staff' },
+            {
+                $set: { description: 'staff', permissions: staffPermissionIds },
+                $setOnInsert: { name: 'staff' },
+            },
+            { new: true, upsert: true }
+        );
 
         let user = await User.findOne({ email: ADMIN_EMAIL });
 
