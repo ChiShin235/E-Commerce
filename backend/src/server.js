@@ -113,6 +113,7 @@ process.on("uncaughtException", (error) => {
 connectDB().then(() => {
     app.listen(PORT, () => {
         console.log(`ðŸš€ Server báº¯t Ä‘áº§u trÃªn cá»•ng ${PORT}`);
+        console.log(`Swagger UI: http://localhost:${PORT}/swagger`);
     });
 }).catch((error) => {
     console.error("âŒ KhÃ´ng thá»ƒ khá»Ÿi Ä‘á»™ng server:", error);
