@@ -50,11 +50,10 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-userSchema.pre("validate", function(next) {
+userSchema.pre("validate", function() {
     if (!this.name && this.username) {
         this.name = this.username;
     }
-    next();
 });
 
 userSchema.pre("save", async function() {

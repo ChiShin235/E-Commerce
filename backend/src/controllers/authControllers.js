@@ -66,6 +66,7 @@ export const register = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error("Register error:", error);
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({
@@ -82,10 +83,10 @@ export const register = async (req, res) => {
             });
         }
 
-        res.status(500).json({
+                res.status(500).json({
             success: false,
             message: "Server error when registering",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            error: error.message
         });
     }
 };
@@ -136,6 +137,7 @@ export const login = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error("Register error:", error);
         res.status(500).json({
             success: false,
             message: "Server error when logging in",
@@ -171,6 +173,7 @@ export const getCurrentUser = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error("Register error:", error);
         res.status(500).json({
             success: false,
             message: "Server error when fetching user"
@@ -251,6 +254,7 @@ export const updateProfile = async (req, res) => {
             }
         });
     } catch (error) {
+        console.error("Register error:", error);
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(err => err.message);
             return res.status(400).json({
@@ -274,3 +278,4 @@ export const updateProfile = async (req, res) => {
         });
     }
 };
+
