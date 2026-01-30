@@ -1,4 +1,6 @@
-﻿import Product from '../models/Product.js';
+import mongoose from 'mongoose';
+import Product from '../models/Product.js';
+import Category from '../models/Category.js';
 
 // Get product by id
 export const getProductById = async (request, response) => {
@@ -33,6 +35,20 @@ export const getAllProducts = async (request, response) => {
 export const createProduct = async (request, response) => {
     try {
         const { name, title, description, price, stock, images, averageRating, category } = request.body;
+
+        if (!category || !mongoose.Types.ObjectId.isValid(category)) {
+            return response.status(400).json({
+                message: "Invalid category ID"
+            });
+        }
+
+        const categoryExists = await Category.findById(category);
+        if (!categoryExists) {
+            return response.status(400).json({
+                message: "Category not found"
+            });
+        }
+
         const product = new Product({
             name,
             title,
@@ -57,6 +73,22 @@ export const createProduct = async (request, response) => {
 export const updateProduct = async (request, response) => {
     try {
         const { name, title, description, price, stock, images, averageRating, category } = request.body;
+
+        if (category) {
+            if (!mongoose.Types.ObjectId.isValid(category)) {
+                return response.status(400).json({
+                    message: "Invalid category ID"
+                });
+            }
+
+            const categoryExists = await Category.findById(category);
+            if (!categoryExists) {
+                return response.status(400).json({
+                    message: "Category not found"
+                });
+            }
+        }
+
         const updatedProduct = await Product.findByIdAndUpdate(
             request.params.id,
             { name, title, description, price, stock, images, averageRating, category },

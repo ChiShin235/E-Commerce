@@ -14,6 +14,8 @@
   tags: [
     { name: 'User', description: 'User management' },
     { name: 'Admin', description: 'Admin management' },
+    { name: 'Roles', description: 'Role management' },
+    { name: 'Permissions', description: 'Permission management' },
     { name: 'Products', description: 'Product management' },
     { name: 'Categories', description: 'Category management' },
     { name: 'Reviews', description: 'Review management' },
@@ -64,6 +66,10 @@
               name: { type: 'string' },
               email: { type: 'string' },
               role: { type: 'string' },
+              roles: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/Role' },
+              },
             },
           },
         },
@@ -85,6 +91,70 @@
               zip: { type: 'string' },
             },
           },
+        },
+      },
+      Permission: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          key: { type: 'string', example: 'products:create' },
+          description: { type: 'string' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      PermissionCreateRequest: {
+        type: 'object',
+        required: ['key'],
+        properties: {
+          key: { type: 'string', example: 'products:create' },
+          description: { type: 'string', example: 'Create products' },
+        },
+      },
+      Role: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          name: { type: 'string', example: 'product_manager' },
+          description: { type: 'string' },
+          permissions: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/Permission' },
+          },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      RoleCreateRequest: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', example: 'product_manager' },
+          description: { type: 'string', example: 'Manage products' },
+          permissionIds: { type: 'array', items: { type: 'string' } },
+        },
+      },
+      RoleUpdateRequest: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', example: 'product_manager' },
+          description: { type: 'string' },
+          permissionIds: { type: 'array', items: { type: 'string' } },
+        },
+      },
+      AssignRolesRequest: {
+        type: 'object',
+        required: ['roleIds'],
+        properties: {
+          roleIds: { type: 'array', items: { type: 'string' } },
+          replace: { type: 'boolean', example: false },
+        },
+      },
+      AddPermissionsToRoleRequest: {
+        type: 'object',
+        required: ['permissionIds'],
+        properties: {
+          permissionIds: { type: 'array', items: { type: 'string' } },
         },
       },
       Category: {
@@ -454,6 +524,338 @@
             },
           },
           401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/users/{id}/roles': {
+      get: {
+        tags: ['User'],
+        summary: 'Get roles for user',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { type: 'object' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+      post: {
+        tags: ['User'],
+        summary: 'Assign roles to user',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AssignRolesRequest' },
+            },
+          },
+        },
+        responses: {
+          200: { description: 'OK' },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+    },
+    '/users/{id}/roles/{roleId}': {
+      delete: {
+        tags: ['User'],
+        summary: 'Remove role from user',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'roleId', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'OK' },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+    },
+    '/roles': {
+      get: {
+        tags: ['Roles'],
+        summary: 'Get all roles',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Role' },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+      post: {
+        tags: ['Roles'],
+        summary: 'Create role',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/RoleCreateRequest' },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Created',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Role' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+    },
+    '/roles/{id}': {
+      get: {
+        tags: ['Roles'],
+        summary: 'Get role by ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Role' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+      put: {
+        tags: ['Roles'],
+        summary: 'Update role',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/RoleUpdateRequest' },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Role' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+      delete: {
+        tags: ['Roles'],
+        summary: 'Delete role',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'OK' },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+    },
+    '/roles/{id}/permissions': {
+      post: {
+        tags: ['Roles'],
+        summary: 'Add permissions to role',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/AddPermissionsToRoleRequest' },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Role' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+    },
+    '/roles/{id}/permissions/{permissionId}': {
+      delete: {
+        tags: ['Roles'],
+        summary: 'Remove permission from role',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'permissionId', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Role' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+    },
+    '/permissions': {
+      get: {
+        tags: ['Permissions'],
+        summary: 'Get all permissions',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/Permission' },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+      post: {
+        tags: ['Permissions'],
+        summary: 'Create permission',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PermissionCreateRequest' },
+            },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Created',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Permission' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+    },
+    '/permissions/{id}': {
+      get: {
+        tags: ['Permissions'],
+        summary: 'Get permission by ID',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Permission' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+      put: {
+        tags: ['Permissions'],
+        summary: 'Update permission',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/PermissionCreateRequest' },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/Permission' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+      delete: {
+        tags: ['Permissions'],
+        summary: 'Delete permission',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'OK' },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
         },
       },
     },

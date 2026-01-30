@@ -46,11 +46,10 @@ const productSchema = new mongoose.Schema({
     timestamps: true
 });
 
-productSchema.pre("validate", function(next) {
+productSchema.pre("validate", function() {
     if (!this.name && this.title) {
         this.name = this.title;
     }
-    next();
 });
 
 export default mongoose.model("Product", productSchema);

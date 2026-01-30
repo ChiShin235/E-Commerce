@@ -60,6 +60,7 @@ export const register = async (req, res) => {
                     name: user.name,
                     email: user.email,
                     role: user.role,
+                    roles: user.roles,
                     createdAt: user.createdAt
                 },
                 token
@@ -131,6 +132,7 @@ export const login = async (req, res) => {
                     name: user.name,
                     email: user.email,
                     role: user.role,
+                    roles: user.roles,
                     createdAt: user.createdAt
                 },
                 token
@@ -149,7 +151,10 @@ export const login = async (req, res) => {
 // Get current user
 export const getCurrentUser = async (req, res) => {
     try {
-        const user = await User.findById(req.userId);
+        const user = await User.findById(req.userId).populate({
+            path: "roles",
+            populate: { path: "permissions" }
+        });
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -168,6 +173,7 @@ export const getCurrentUser = async (req, res) => {
                     phone: user.phone,
                     address: user.address,
                     role: user.role,
+                    roles: user.roles,
                     createdAt: user.createdAt
                 }
             }
@@ -249,6 +255,7 @@ export const updateProfile = async (req, res) => {
                     phone: user.phone,
                     address: user.address,
                     role: user.role,
+                    roles: user.roles,
                     createdAt: user.createdAt
                 }
             }
