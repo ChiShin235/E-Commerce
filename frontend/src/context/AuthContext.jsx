@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../services/api';
-import { toast } from 'sonner';
 
 const AuthContext = createContext(null);
 
@@ -17,12 +16,10 @@ export const AuthProvider = ({ children }) => {
 
       if (token && savedUser) {
         try {
-          // Verify token bằng cách gọi API
-          const response = await authAPI.getCurrentUser();
-          setUser(response.data.user);
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
           setIsAuthenticated(true);
         } catch (error) {
-          // Token không hợp lệ, xóa khỏi localStorage
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
@@ -38,49 +35,55 @@ export const AuthProvider = ({ children }) => {
   // Đăng nhập
   const login = async (email, password) => {
     try {
+      console.log('AuthContext login called with:', email);
       const response = await authAPI.login({ email, password });
-      
+      console.log('Backend response:', response);
+
       if (response.success) {
         const { user, token } = response.data;
-        
+
         // Lưu token và user vào localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-        
+
         setUser(user);
         setIsAuthenticated(true);
-        
-        toast.success(response.message || 'Đăng nhập thành công');
-        return { success: true };
+
+        return { success: true, message: response.message };
+      } else {
+        return { success: false, message: response.message || 'Đăng nhập thất bại' };
       }
     } catch (error) {
+      console.error('Login error in AuthContext:', error);
       const message = error.response?.data?.message || 'Đăng nhập thất bại';
-      toast.error(message);
       return { success: false, message };
     }
   };
 
   // Đăng ký
-  const register = async (username, email, password) => {
+  const register = async (name, email, phone, password) => {
     try {
-      const response = await authAPI.register({ username, email, password });
-      
+      console.log('AuthContext register called');
+      const response = await authAPI.register({ username: name, email, phone, password });
+      console.log('Register response:', response);
+
       if (response.success) {
         const { user, token } = response.data;
-        
+
         // Lưu token và user vào localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-        
+
         setUser(user);
         setIsAuthenticated(true);
-        
-        toast.success(response.message || 'Đăng ký thành công');
-        return { success: true };
+
+        return { success: true, message: response.message };
+      } else {
+        return { success: false, message: response.message || 'Đăng ký thất bại' };
       }
     } catch (error) {
+      console.error('Register error in AuthContext:', error);
       const message = error.response?.data?.message || 'Đăng ký thất bại';
-      toast.error(message);
       return { success: false, message };
     }
   };
@@ -91,7 +94,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
-    toast.success('Đã đăng xuất');
   };
 
   const value = {
@@ -113,3 +115,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+export default AuthContext;

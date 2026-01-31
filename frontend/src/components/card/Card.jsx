@@ -1,0 +1,187 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ShoppingBag, Heart } from 'lucide-react';
+import { productAPI } from '../../services/api';
+import QuickViewModal from '../QuickViewModal';
+
+export default function Card() {
+    const navigate = useNavigate();
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [favorites, setFavorites] = useState(new Set());
+    const [quickViewProduct, setQuickViewProduct] = useState(null);
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
+    const fetchProducts = async () => {
+        try {
+            setLoading(true);
+            const data = await productAPI.getAll({ limit: 8 });
+            setProducts(data.data || data);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching products:', err);
+            setError('Failed to load products');
+            setProducts([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const toggleFavorite = (productId) => {
+        const newFavorites = new Set(favorites);
+        if (newFavorites.has(productId)) {
+            newFavorites.delete(productId);
+        } else {
+            newFavorites.add(productId);
+        }
+        setFavorites(newFavorites);
+    };
+
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+        }).format(price);
+    };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-96">
+                <div className="text-lg text-gray-600">Loading products...</div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="w-full bg-white">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+                {/* Products Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {products.map((product) => {
+                        const productId = product._id || product.id;
+                        const productImage = product.images?.[0] || product.image;
+                        return (
+                            <div key={productId} className="group">
+                                {/* Collab Label */}
+                                <div className="mb-4 flex justify-between items-start">
+                                    <span className="bg-black text-white text-xs font-bold px-3 py-1">
+                                        Collab
+                                    </span>
+                                    <button
+                                        onClick={() => toggleFavorite(productId)}
+                                        className={`p-2 rounded-full transition-all duration-300 ${favorites.has(product.id)
+                                            ? 'bg-red-500 text-white'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        <Heart
+                                            size={18}
+                                            fill={favorites.has(product.id) ? 'currentColor' : 'none'}
+                                        />
+                                    </button>
+                                </div>
+
+                                {/* Product Image Container */}
+                                <div
+                                    onClick={() => navigate(`/product/${productId}`)}
+                                    className="relative bg-gray-100 rounded-lg overflow-hidden mb-4 h-64 flex items-center justify-center group cursor-pointer">
+                                    {productImage ? (
+                                        <img
+                                            src={productImage}
+                                            alt={product.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                            <ShoppingBag size={48} className="text-gray-400" />
+                                        </div>
+                                    )}
+
+                                    {/* Hover Overlay with Buttons */}
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg">
+                                        <div className="flex flex-col gap-3 px-4">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/product/${productId}`);
+                                                }}
+                                                className="bg-white text-black font-bold px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm whitespace-nowrap"
+                                            >
+                                                View Detail
+                                            </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setQuickViewProduct(product);
+                                                }}
+                                                className="bg-black text-white border-2 border-white font-bold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm whitespace-nowrap"
+                                            >
+                                                Quick View
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Product Name */}
+                                <h3
+                                    onClick={() => navigate(`/product/${productId}`)}
+                                    className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 cursor-pointer transition-colors">
+                                    {product.name}
+                                </h3>
+
+                                {/* Product Price */}
+                                <div className="flex items-center gap-2">
+                                    <p className="text-lg font-bold text-gray-900">
+                                        {formatPrice(product.price)}
+                                    </p>
+                                    {product.originalPrice && product.originalPrice > product.price && (
+                                        <p className="text-sm text-gray-500 line-through">
+                                            {formatPrice(product.originalPrice)}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Stock Status */}
+                                {product.stock <= 0 && (
+                                    <p className="text-red-600 text-sm font-semibold mt-2">Out of Stock</p>
+                                )}
+                                {product.stock > 0 && product.stock < 5 && (
+                                    <p className="text-orange-600 text-sm font-semibold mt-2">
+                                        Only {product.stock} left
+                                    </p>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="mt-8 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                        {error}
+                    </div>
+                )}
+
+                {/* No Products */}
+                {!loading && products.length === 0 && !error && (
+                    <div className="text-center py-12">
+                        <p className="text-gray-600 text-lg">No products found</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Quick View Modal */}
+            <QuickViewModal
+                product={quickViewProduct}
+                isOpen={!!quickViewProduct}
+                onClose={() => setQuickViewProduct(null)}
+            />
+        </div>
+    );
+}
