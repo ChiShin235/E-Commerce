@@ -28,8 +28,8 @@ const productSchema = new mongoose.Schema({
         min: [0, "Stock must be >= 0"],
     },
     images: {
-        type: String,
-        
+        type: [String],
+        default: [],
     },
     size: {
         type: String,
