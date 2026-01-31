@@ -52,6 +52,13 @@ export const createRole = async (req, res) => {
         const populatedRole = await Role.findById(newRole._id).populate('permissions');
         res.status(201).json(populatedRole);
     } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({ message: "Role name already exists" });
+        }
+        if (error?.name === "ValidationError") {
+            const messages = Object.values(error.errors || {}).map((err) => err.message);
+            return res.status(400).json({ message: messages.join(", ") });
+        }
         console.error("Error in createRole:", error);
         res.status(500).json({ message: "Server error while creating role" });
     }
@@ -162,3 +169,4 @@ export const removePermissionFromRole = async (req, res) => {
         res.status(500).json({ message: "Server error while removing permission" });
     }
 };
+

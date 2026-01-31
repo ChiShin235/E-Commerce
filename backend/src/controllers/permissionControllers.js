@@ -47,6 +47,13 @@ export const createPermission = async (req, res) => {
 
         res.status(201).json(newPermission);
     } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({ message: "Permission key already exists" });
+        }
+        if (error?.name === "ValidationError") {
+            const messages = Object.values(error.errors || {}).map((err) => err.message);
+            return res.status(400).json({ message: messages.join(", ") });
+        }
         console.error("Error in createPermission:", error);
         res.status(500).json({ message: "Server error while creating permission" });
     }
@@ -96,3 +103,4 @@ export const deletePermission = async (req, res) => {
         res.status(500).json({ message: "Server error while deleting permission" });
     }
 };
+
