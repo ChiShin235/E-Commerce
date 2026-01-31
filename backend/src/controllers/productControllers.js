@@ -34,7 +34,7 @@ export const getAllProducts = async (request, response) => {
 // Create new product
 export const createProduct = async (request, response) => {
     try {
-        const { name, title, description, price, stock, images, averageRating, category } = request.body;
+        const { name, title, description, price, stock, images, size, averageRating, category } = request.body;
 
         if (!category || !mongoose.Types.ObjectId.isValid(category)) {
             return response.status(400).json({
@@ -56,6 +56,7 @@ export const createProduct = async (request, response) => {
             price,
             stock,
             images,
+            size,
             averageRating,
             category
         });
@@ -72,7 +73,7 @@ export const createProduct = async (request, response) => {
 // Update product
 export const updateProduct = async (request, response) => {
     try {
-        const { name, title, description, price, stock, images, averageRating, category } = request.body;
+        const { name, title, description, price, stock, images, size, averageRating, category } = request.body;
 
         if (category) {
             if (!mongoose.Types.ObjectId.isValid(category)) {
@@ -91,7 +92,7 @@ export const updateProduct = async (request, response) => {
 
         const updatedProduct = await Product.findByIdAndUpdate(
             request.params.id,
-            { name, title, description, price, stock, images, averageRating, category },
+            { name, title, description, price, stock, images, size, averageRating, category },
             { new: true }
         );
         if (!updatedProduct) {
