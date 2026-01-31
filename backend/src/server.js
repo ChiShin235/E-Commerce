@@ -20,15 +20,21 @@ import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 import { authenticateToken } from "./middleware/authMiddleware.js";
-import { requireAdmin, requirePermission } from "./middleware/roleMiddleware.js";
+import {
+  requireAdmin,
+  requirePermission,
+} from "./middleware/roleMiddleware.js";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5001;
 
-const app = express ();
+const app = express();
 
-const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173,http://localhost:5174,http://localhost:3000,http://localhost:5001,http://127.0.0.1:5001")
+const allowedOrigins = (
+  process.env.CORS_ORIGINS ||
+  "http://localhost:5173,http://localhost:5174,http://localhost:3000,http://localhost:5001,http://127.0.0.1:5001"
+)
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -59,7 +65,9 @@ app.use((req, res, next) => {
   const start = Date.now();
   res.on("finish", () => {
     const ms = Date.now() - start;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${ms}ms)`);
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${ms}ms)`,
+    );
   });
   next();
 });
@@ -75,33 +83,47 @@ app.use("/api/users", authenticateToken, requireAdmin, userRoleRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", authenticateToken, requireAdmin, categoryRoutes);
 app.use("/api/reviews", authenticateToken, requireAdmin, reviewRoutes);
-app.use("/api/recommendations", authenticateToken, requireAdmin, aiRecommendationRoutes);
+app.use(
+  "/api/recommendations",
+  authenticateToken,
+  requireAdmin,
+  aiRecommendationRoutes,
+);
 app.use("/api/chatbot-logs", authenticateToken, requireAdmin, chatbotLogRoutes);
-app.use("/api/carts", authenticateToken, requireAdmin, cartRoutes);
-app.use("/api/cart-items", authenticateToken, requireAdmin, cartItemRoutes);
-app.use("/api/orders", authenticateToken, requirePermission("manage_orders"), orderRoutes);
-app.use("/api/order-items", authenticateToken, requirePermission("manage_orders"), orderItemRoutes);
+app.use("/api/carts", authenticateToken, cartRoutes);
+app.use("/api/cart-items", authenticateToken, cartItemRoutes);
+app.use(
+  "/api/orders",
+  authenticateToken,
+  requirePermission("manage_orders"),
+  orderRoutes,
+);
+app.use(
+  "/api/order-items",
+  authenticateToken,
+  requirePermission("manage_orders"),
+  orderItemRoutes,
+);
 app.use("/api/payments", authenticateToken, requireAdmin, paymentRoutes);
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Middleware xá»­ lÃ½ lá»—i (pháº£i Ä‘áº·t sau táº¥t cáº£ routes)
 app.use((err, req, res, next) => {
-    console.error("âŒ Unhandled error:", err);
-    res.status(err.status || 500).json({
-        success: false,
-        message: err.message || "Lá»—i server khÃ´ng xÃ¡c Ä‘á»‹nh",
-        error: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
+  console.error("âŒ Unhandled error:", err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Lá»—i server khÃ´ng xÃ¡c Ä‘á»‹nh",
+    error: process.env.NODE_ENV === "development" ? err.stack : undefined,
+  });
 });
 
 // Route 404
 app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: "Route khÃ´ng tá»“n táº¡i"
-    });
+  res.status(404).json({
+    success: false,
+    message: "Route khÃ´ng tá»“n táº¡i",
+  });
 });
-
 
 process.on("unhandledRejection", (reason) => {
   console.error("Unhandled Rejection:", reason);
@@ -109,17 +131,15 @@ process.on("unhandledRejection", (reason) => {
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
-});// Káº¿t ná»‘i vá»›i MongoDB trÆ°á»›c khi khá»Ÿi Ä‘á»™ng server
-connectDB().then(() => {
+}); // Káº¿t ná»‘i vá»›i MongoDB trÆ°á»›c khi khá»Ÿi Ä‘á»™ng server
+connectDB()
+  .then(() => {
     app.listen(PORT, () => {
-        console.log(`ðŸš€ Server báº¯t Ä‘áº§u trÃªn cá»•ng ${PORT}`);
-        console.log(`Swagger UI: http://localhost:${PORT}/swagger`);
+      console.log(`ðŸš€ Server báº¯t Ä‘áº§u trÃªn cá»•ng ${PORT}`);
+      console.log(`Swagger UI: http://localhost:${PORT}/swagger`);
     });
-}).catch((error) => {
+  })
+  .catch((error) => {
     console.error("âŒ KhÃ´ng thá»ƒ khá»Ÿi Ä‘á»™ng server:", error);
     process.exit(1);
-});
-
-
-
-
+  });
