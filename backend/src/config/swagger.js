@@ -1,4 +1,4 @@
-﻿const swaggerSpec = {
+const swaggerSpec = {
   openapi: '3.0.0',
   info: {
     title: 'Product API',
@@ -294,6 +294,17 @@
         required: ['user'],
         properties: {
           user: { type: 'string' },
+        },
+      },
+      CartMyResponse: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean' },
+          cart: { $ref: '#/components/schemas/Cart' },
+          items: {
+            type: 'array',
+            items: { $ref: '#/components/schemas/CartItem' },
+          },
         },
       },
       CartItem: {
@@ -866,6 +877,7 @@
       get: {
         tags: ['Products'],
         summary: 'Get all products',
+        security: [],
         responses: {
           200: {
             description: 'OK',
@@ -907,6 +919,7 @@
       get: {
         tags: ['Products'],
         summary: 'Get product by ID',
+        security: [],
         parameters: [
           {
             name: 'id',
@@ -1322,7 +1335,22 @@
         },
       },
     },
-    '/carts': {
+    '/carts/my': {
+      get: {
+        tags: ['Carts'],
+        summary: 'Get my cart',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/CartMyResponse' } },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },    '/carts': {
       get: {
         tags: ['Carts'],
         summary: 'Get all carts',
@@ -1735,3 +1763,8 @@
 };
 
 export default swaggerSpec;
+
+
+
+
+
