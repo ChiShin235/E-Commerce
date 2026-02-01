@@ -11,6 +11,8 @@ import Cart from './components/cart/Cart';
 import Order from '../pages/order/Order';
 import Shop from '../pages/shop/shop';
 import Profile from '../pages/profile/Profile';
+import About from '../pages/about/About';
+import Contact from '../pages/contact/contact';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/product/:id" element={<Detailcard />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/order" element={

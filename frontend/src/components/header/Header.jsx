@@ -44,9 +44,9 @@ export default function Header() {
 
     const menuItems = [
         'SHOP',
-        'THE ROLLING STONES',
-        "COLLAB'S",
-        'OUTLET',
+        // 'THE ROLLING STONES',
+        // "COLLAB'S",
+        // 'OUTLET',
         'CONTACT',
         'ABOUT US',
         'BEST SELLER'
@@ -63,8 +63,12 @@ export default function Header() {
                         <div className="flex-shrink-0">
                             <div
                                 onClick={() => navigate('/')}
-                                className="w-14 h-14 bg-black rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors duration-200">
-                                <span className="text-white font-bold text-lg">TEAM2</span>
+                                className="cursor-pointer hover:opacity-80 transition-opacity duration-200">
+                                <img
+                                    src="/picture/logo.png"
+                                    alt="Logo"
+                                    className="h-14 w-14 object-cover rounded-full"
+                                />
                             </div>
                         </div>
 
@@ -76,6 +80,10 @@ export default function Header() {
                                     onClick={() => {
                                         if (item === 'SHOP') {
                                             navigate('/shop');
+                                        } else if (item === 'CONTACT') {
+                                            navigate('/contact');
+                                        } else if (item === 'ABOUT US') {
+                                            navigate('/about');
                                         }
                                     }}
                                     className="px-3 py-2 text-sm font-medium text-gray-800 hover:text-gray-600 transition-colors duration-200"
@@ -211,13 +219,22 @@ export default function Header() {
                     {isOpen && (
                         <nav className="md:hidden pb-4 space-y-2">
                             {menuItems.map((item) => (
-                                <a
+                                <button
                                     key={item}
-                                    href="#"
-                                    className="block px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-100 rounded transition-colors duration-200"
+                                    onClick={() => {
+                                        if (item === 'SHOP') {
+                                            navigate('/shop');
+                                        } else if (item === 'CONTACT') {
+                                            navigate('/contact');
+                                        } else if (item === 'ABOUT US') {
+                                            navigate('/about');
+                                        }
+                                        setIsOpen(false);
+                                    }}
+                                    className="block w-full text-left px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-100 rounded transition-colors duration-200"
                                 >
                                     {item}
-                                </a>
+                                </button>
                             ))}
                         </nav>
                     )}
