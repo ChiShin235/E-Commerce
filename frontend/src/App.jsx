@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import HomePage from '../pages/homepage/Homepage';
 import AuthPage from '../pages/auth/AuthPage';
 import NotFound from '../pages/NotFound';
@@ -13,6 +14,7 @@ import Shop from '../pages/shop/shop';
 import Profile from '../pages/profile/Profile';
 import About from '../pages/about/About';
 import Contact from '../pages/contact/contact';
+import AdminDashboard from '../pages/admin/Dashboard';
 
 function App() {
   return (
@@ -36,6 +38,11 @@ function App() {
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
+            } />
+            <Route path="/admin/dashboard" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
             } />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/register" element={<AuthPage />} />

@@ -112,6 +112,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Check if user is admin
+  const isAdmin = () => {
+    if (!user) return false;
+    return user?.roles?.some(role => role.name === 'admin') || user?.role === 'admin';
+  };
+
   const value = {
     user,
     loading,
@@ -120,6 +126,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    isAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
