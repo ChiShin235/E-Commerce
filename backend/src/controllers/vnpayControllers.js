@@ -10,8 +10,15 @@ import {
   IpnSuccess,
   ignoreLogger,
 } from "vnpay";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import Order from "../models/Order.js";
 import Payment from "../models/Payment.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const vnpay = new VNPay({
   tmnCode: process.env.VNPAY_TMN_CODE,
@@ -104,7 +111,10 @@ export const createVnpayPaymentUrl = async (req, res) => {
     return res.status(200).json({ paymentUrl, orderId: order._id });
   } catch (error) {
     console.error("Error in createVnpayPaymentUrl:", error);
-    return res.status(500).json({ message: "Server error while creating VNPay URL" });
+    return res.status(500).json({
+      message: "Server error while creating VNPay URL",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 

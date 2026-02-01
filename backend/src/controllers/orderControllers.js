@@ -32,13 +32,22 @@ export const getOrderById = async (req, res) => {
 
 export const createOrder = async (req, res) => {
     try {
-        const { user, items, status } = req.body;
-        if (!user || !Array.isArray(items) || items.length === 0) {
+        const { user, items, status, email, shippingAddress, paymentMethod, shippingFee } = req.body;
+        const userId = req.userId || user;
+        if (!userId || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ message: "user and items are required" });
         }
 
         const totalAmount = computeTotal(items);
-        const order = new Order({ user, totalAmount, status });
+        const order = new Order({
+            user: userId,
+            totalAmount,
+            status,
+            email,
+            shippingAddress,
+            paymentMethod,
+            shippingFee,
+        });
         const newOrder = await order.save();
 
         const orderItems = await OrderItem.insertMany(
@@ -59,7 +68,7 @@ export const createOrder = async (req, res) => {
 
 export const updateOrder = async (req, res) => {
     try {
-        const { user, status, items } = req.body;
+        const { user, status, items, email, shippingAddress, paymentMethod, shippingFee } = req.body;
         const order = await Order.findById(req.params.id);
         if (!order) {
             return res.status(404).json({ message: "Order not found" });
@@ -70,6 +79,18 @@ export const updateOrder = async (req, res) => {
         }
         if (status) {
             order.status = status;
+        }
+        if (email !== undefined) {
+            order.email = email;
+        }
+        if (shippingAddress !== undefined) {
+            order.shippingAddress = shippingAddress;
+        }
+        if (paymentMethod) {
+            order.paymentMethod = paymentMethod;
+        }
+        if (shippingFee !== undefined) {
+            order.shippingFee = shippingFee;
         }
 
         let updatedItems = null;

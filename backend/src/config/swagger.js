@@ -335,6 +335,20 @@ const swaggerSpec = {
         properties: {
           _id: { type: 'string' },
           user: { type: 'string' },
+          email: { type: 'string' },
+          shippingAddress: {
+            type: 'object',
+            properties: {
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
+              phone: { type: 'string' },
+              address: { type: 'string' },
+              district: { type: 'string' },
+              city: { type: 'string' },
+            },
+          },
+          paymentMethod: { type: 'string', example: 'cod' },
+          shippingFee: { type: 'number', example: 0 },
           totalAmount: { type: 'number' },
           status: { type: 'string' },
           createdAt: { type: 'string', format: 'date-time' },
@@ -358,6 +372,20 @@ const swaggerSpec = {
         required: ['user', 'items'],
         properties: {
           user: { type: 'string' },
+          email: { type: 'string' },
+          shippingAddress: {
+            type: 'object',
+            properties: {
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
+              phone: { type: 'string' },
+              address: { type: 'string' },
+              district: { type: 'string' },
+              city: { type: 'string' },
+            },
+          },
+          paymentMethod: { type: 'string', example: 'cod' },
+          shippingFee: { type: 'number', example: 0 },
           status: { type: 'string', example: 'pending' },
           items: {
             type: 'array',
@@ -377,6 +405,20 @@ const swaggerSpec = {
         type: 'object',
         properties: {
           user: { type: 'string' },
+          email: { type: 'string' },
+          shippingAddress: {
+            type: 'object',
+            properties: {
+              firstName: { type: 'string' },
+              lastName: { type: 'string' },
+              phone: { type: 'string' },
+              address: { type: 'string' },
+              district: { type: 'string' },
+              city: { type: 'string' },
+            },
+          },
+          paymentMethod: { type: 'string', example: 'vnpay' },
+          shippingFee: { type: 'number', example: 0 },
           status: { type: 'string', example: 'paid' },
           items: {
             type: 'array',

@@ -84,7 +84,7 @@ export default function Cart() {
             return;
         }
         // Navigate to checkout page
-        navigate('/checkout');
+        navigate('/order');
     };
 
     return (

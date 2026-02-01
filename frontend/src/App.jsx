@@ -8,7 +8,7 @@ import AuthPage from '../pages/auth/AuthPage';
 import NotFound from '../pages/NotFound';
 import Detailcard from '../pages/Detail-card/Detailcard';
 import Cart from './components/cart/Cart';
-import Payment from '../pages/payment/Payment';
+import Order from '../pages/order/Order';
 import Shop from '../pages/shop/shop';
 
 function App() {
@@ -22,9 +22,9 @@ function App() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<Detailcard />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={
+            <Route path="/order" element={
               <ProtectedRoute>
-                <Payment />
+                <Order />
               </ProtectedRoute>
             } />
             <Route path="/login" element={<AuthPage />} />

@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../src/context/CartContext';
 import { useAuth } from '../../src/context/AuthContext';
-import { orderAPI } from '../../src/services/api';
+import { cartAPI, orderAPI, vnpayAPI } from '../../src/services/api';
 import { toast } from 'sonner';
 import Header from '../../src/components/header/Header';
 import Footer from '../../src/components/footer/Footer';
 
-export default function Payment() {
+export default function Order() {
     const navigate = useNavigate();
-    const { cartItems, getCartTotal, clearCart } = useCart();
-    const { user } = useAuth();
+    const { cartItems, clearCart } = useCart();
+    const { user, isAuthenticated } = useAuth();
     const [loading, setLoading] = useState(false);
+    const [cartLoading, setCartLoading] = useState(false);
+    const [serverCartItems, setServerCartItems] = useState(null);
     const [paymentMethod, setPaymentMethod] = useState('cod'); // cod, vnpay
     const [formData, setFormData] = useState({
         email: user?.email || '',
@@ -24,6 +26,54 @@ export default function Payment() {
     });
 
     const shippingFee = 0; // Miễn phí
+
+    const getItemPrice = (item) => {
+        if (typeof item?.price === 'number') {
+            return item.price;
+        }
+        return item?.product?.price ?? 0;
+    };
+
+    const getProductId = (item) => {
+        return item?.product?._id || item?.product?.id || item?.product;
+    };
+
+    const effectiveCartItems = useMemo(() => {
+        return serverCartItems !== null ? serverCartItems : cartItems;
+    }, [serverCartItems, cartItems]);
+
+    const subtotal = useMemo(() => {
+        return effectiveCartItems.reduce((total, item) => {
+            return total + getItemPrice(item) * item.quantity;
+        }, 0);
+    }, [effectiveCartItems]);
+
+    useEffect(() => {
+        const fetchCartFromBackend = async () => {
+            if (!isAuthenticated) {
+                setServerCartItems(null);
+                return;
+            }
+
+            try {
+                setCartLoading(true);
+                const response = await cartAPI.getMyCart();
+                if (response?.success) {
+                    const items = Array.isArray(response.items) ? response.items : [];
+                    setServerCartItems(items);
+                } else {
+                    setServerCartItems(null);
+                }
+            } catch (error) {
+                console.error('Error fetching cart from backend:', error);
+                setServerCartItems(null);
+            } finally {
+                setCartLoading(false);
+            }
+        };
+
+        fetchCartFromBackend();
+    }, [isAuthenticated]);
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN', {
@@ -70,10 +120,10 @@ export default function Payment() {
             // Prepare order data
             const orderData = {
                 user: user._id || user.id,
-                items: cartItems.map(item => ({
-                    product: item.product._id || item.product.id || item.product,
+                items: effectiveCartItems.map(item => ({
+                    product: getProductId(item),
                     quantity: item.quantity,
-                    price: item.price,
+                    price: getItemPrice(item),
                 })),
                 status: 'pending',
                 shippingAddress: {
@@ -91,6 +141,25 @@ export default function Payment() {
             const response = await orderAPI.create(orderData);
             console.log('Order created:', response);
 
+            const orderId = response?.order?._id || response?.order?.id;
+            if (paymentMethod === 'vnpay') {
+                if (!orderId) {
+                    toast.error('Không lấy được mã đơn hàng để thanh toán VNPay.');
+                    return;
+                }
+
+                const paymentResponse = await vnpayAPI.createPaymentUrl({ orderId });
+                const paymentUrl = paymentResponse?.paymentUrl;
+                if (!paymentUrl) {
+                    toast.error('Không tạo được link thanh toán VNPay.');
+                    return;
+                }
+
+                clearCart();
+                window.location.href = paymentUrl;
+                return;
+            }
+
             toast.success('Đặt hàng thành công!');
             clearCart();
             navigate('/');
@@ -102,10 +171,9 @@ export default function Payment() {
         }
     };
 
-    const subtotal = getCartTotal();
     const total = subtotal + shippingFee;
 
-    if (cartItems.length === 0) {
+    if (!cartLoading && effectiveCartItems.length === 0) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">
@@ -289,15 +357,16 @@ export default function Payment() {
                         <div className="lg:pl-8">
                             {/* Products List */}
                             <div className="space-y-4 mb-6">
-                                {cartItems.map((item) => {
+                                {effectiveCartItems.map((item) => {
                                     const product = item.product;
+                                    const productId = getProductId(item);
                                     const productImage = product?.images?.[0] || product?.image;
                                     const productName = product?.name || 'Product';
-                                    const productPrice = item.price || product?.price || 0;
+                                    const productPrice = getItemPrice(item);
                                     const size = item.size || 'One Size';
 
                                     return (
-                                        <div key={item._id || item.id} className="flex gap-4">
+                                        <div key={`${productId}-${size}`} className="flex gap-4">
                                             <div className="relative w-20 h-20 flex-shrink-0 bg-gray-100 rounded">
                                                 {productImage ? (
                                                     <img

@@ -121,4 +121,11 @@ export const orderAPI = {
   },
 };
 
+export const vnpayAPI = {
+  createPaymentUrl: async (payload) => {
+    const response = await api.post("/vnpay/create", payload);
+    return response.data;
+  },
+};
+
 export default api;

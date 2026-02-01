@@ -18,6 +18,8 @@ import permissionsRoutes from "./routes/permissionsRoutes.js";
 import userRoleRoutes from "./routes/userRoleRoutes.js";
 import connectDB from "./config/db.js";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./config/swagger.js";
 import { authenticateToken } from "./middleware/authMiddleware.js";
@@ -26,7 +28,9 @@ import {
   requirePermission,
 } from "./middleware/roleMiddleware.js";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 const PORT = process.env.PORT || 5001;
 
@@ -82,7 +86,7 @@ app.use("/api/roles", authenticateToken, requireAdmin, rolesRoutes);
 app.use("/api/permissions", authenticateToken, requireAdmin, permissionsRoutes);
 app.use("/api/users", authenticateToken, requireAdmin, userRoleRoutes);
 app.use("/api/products", productsRoutes);
-app.use("/api/categories", authenticateToken, requireAdmin, categoryRoutes);
+app.use("/api/categories", categoryRoutes);
 app.use("/api/reviews", authenticateToken, requireAdmin, reviewRoutes);
 app.use(
   "/api/recommendations",
@@ -93,12 +97,7 @@ app.use(
 app.use("/api/chatbot-logs", authenticateToken, requireAdmin, chatbotLogRoutes);
 app.use("/api/carts", authenticateToken, cartRoutes);
 app.use("/api/cart-items", authenticateToken, cartItemRoutes);
-app.use(
-  "/api/orders",
-  authenticateToken,
-  requirePermission("manage_orders"),
-  orderRoutes,
-);
+app.use("/api/orders", authenticateToken, orderRoutes);
 app.use(
   "/api/order-items",
   authenticateToken,
