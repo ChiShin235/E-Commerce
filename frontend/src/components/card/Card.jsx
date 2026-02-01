@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart } from 'lucide-react';
 import { productAPI } from '../../services/api';
 import QuickViewModal from '../QuickViewModal';
+import VanillaTilt from 'vanilla-tilt';
 
 export default function Card() {
     const navigate = useNavigate();
@@ -11,10 +12,38 @@ export default function Card() {
     const [error, setError] = useState(null);
     const [favorites, setFavorites] = useState(new Set());
     const [quickViewProduct, setQuickViewProduct] = useState(null);
+    const cardRefs = useRef([]);
 
     useEffect(() => {
         fetchProducts();
     }, []);
+
+    useEffect(() => {
+        // Initialize VanillaTilt for all card elements
+        cardRefs.current.forEach((card) => {
+            if (card && !card.vanillaTilt) {
+                VanillaTilt.init(card, {
+                    max: 25,
+                    speed: 3000,
+                    glare: true,
+                    'max-glare': 0.25,
+                    perspective: 1400,
+                    scale: 1.03,
+                    easing: 'cubic-bezier(0.03, 0.98, 0.52, 0.99)',
+                    transition: true,
+                });
+            }
+        });
+
+        // Cleanup function
+        return () => {
+            cardRefs.current.forEach((card) => {
+                if (card?.vanillaTilt) {
+                    card.vanillaTilt.destroy();
+                }
+            });
+        };
+    }, [products]);
 
     const fetchProducts = async () => {
         try {
@@ -63,39 +92,47 @@ export default function Card() {
 
                 {/* Products Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {products.map((product) => {
+                    {products.map((product, index) => {
                         const productId = product._id || product.id;
                         const productImage = product.images?.[0] || product.image;
                         return (
-                            <div key={productId} className="group">
+                            <div
+                                key={productId}
+                                ref={(el) => (cardRefs.current[index] = el)}
+                                className="group transform-gpu transition-all duration-300"
+                                style={{ transformStyle: 'preserve-3d' }}
+                            >
                                 {/* Collab Label */}
-                                <div className="mb-4 flex justify-between items-start">
-                                    <span className="bg-black text-white text-xs font-bold px-3 py-1">
+                                <div className="mb-4 flex justify-between items-start"
+                                    style={{ transform: 'translateZ(20px)' }}>
+                                    {/* <span className="bg-black text-white text-xs font-bold px-3 py-1 shadow-lg">
                                         Collab
-                                    </span>
-                                    <button
+                                    </span> */}
+                                    {/* <button
                                         onClick={() => toggleFavorite(productId)}
-                                        className={`p-2 rounded-full transition-all duration-300 ${favorites.has(product.id)
+                                        className={`p-2 rounded-full transition-all duration-300 shadow-lg ${favorites.has(product.id)
                                             ? 'bg-red-500 text-white'
                                             : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                             }`}
+                                        style={{ transform: 'translateZ(20px)' }}
                                     >
                                         <Heart
                                             size={18}
                                             fill={favorites.has(product.id) ? 'currentColor' : 'none'}
                                         />
-                                    </button>
+                                    </button> */}
                                 </div>
 
                                 {/* Product Image Container */}
                                 <div
                                     onClick={() => navigate(`/product/${productId}`)}
-                                    className="relative bg-gray-100 rounded-lg overflow-hidden mb-4 h-64 flex items-center justify-center group cursor-pointer">
+                                    className="relative bg-gray-100 rounded-lg overflow-hidden mb-4 h-80 flex items-center justify-center group cursor-pointer shadow-xl"
+                                    style={{ transform: 'translateZ(40px)' }}>
                                     {productImage ? (
                                         <img
                                             src={productImage}
                                             alt={product.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                            className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-700 ease-out"
                                         />
                                     ) : (
                                         <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
@@ -131,12 +168,13 @@ export default function Card() {
                                 {/* Product Name */}
                                 <h3
                                     onClick={() => navigate(`/product/${productId}`)}
-                                    className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 cursor-pointer transition-colors">
+                                    className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 cursor-pointer transition-colors"
+                                    style={{ transform: 'translateZ(25px)' }}>
                                     {product.name}
                                 </h3>
 
                                 {/* Product Price */}
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2" style={{ transform: 'translateZ(25px)' }}>
                                     <p className="text-lg font-bold text-gray-900">
                                         {formatPrice(product.price)}
                                     </p>

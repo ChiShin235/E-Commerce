@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Heart } from 'lucide-react';
+import VanillaTilt from 'vanilla-tilt';
 import { productAPI, categoryAPI } from '../../src/services/api';
 import Header from '../../src/components/header/Header';
 import Footer from '../../src/components/footer/Footer';
@@ -15,6 +16,7 @@ export default function Shop() {
     const [favorites, setFavorites] = useState(new Set());
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const cardRefs = useRef([]);
 
     // Filter states
     const [filters, setFilters] = useState({
@@ -29,6 +31,8 @@ export default function Shop() {
         const search = searchParams.get('search');
         if (search) {
             setSearchQuery(search);
+        } else {
+            setSearchQuery(''); // Clear search query when no search param
         }
         fetchProducts();
         fetchCategories();
@@ -55,6 +59,36 @@ export default function Shop() {
             console.error('Error fetching categories:', err);
         }
     };
+
+    useEffect(() => {
+        // Initialize VanillaTilt for all card elements
+        const timer = setTimeout(() => {
+            cardRefs.current.forEach((card) => {
+                if (card && !card.vanillaTilt) {
+                    VanillaTilt.init(card, {
+                        max: 25,
+                        speed: 3000,
+                        glare: true,
+                        'max-glare': 0.25,
+                        perspective: 1400,
+                        scale: 1.03,
+                        easing: 'cubic-bezier(0.03, 0.98, 0.52, 0.99)',
+                        transition: true,
+                    });
+                }
+            });
+        }, 100);
+
+        // Cleanup function
+        return () => {
+            clearTimeout(timer);
+            cardRefs.current.forEach((card) => {
+                if (card?.vanillaTilt) {
+                    card.vanillaTilt.destroy();
+                }
+            });
+        };
+    }, [products, filters, sortBy]);
 
     const toggleFavorite = (productId) => {
         const newFavorites = new Set(favorites);
@@ -172,11 +206,11 @@ export default function Shop() {
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center z-20 px-4">
                         <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
-                            {searchQuery ? 'KẾT QUẢ TÌM KIẾM' : 'SHOP'}
+                            {searchQuery ? 'Search Results' : 'SHOP'}
                         </h1>
                         {searchQuery ? (
                             <p className="text-lg text-gray-200">
-                                Tìm kiếm: "{searchQuery}" - {sortedProducts.length} sản phẩm
+                                Search: {searchQuery} - {sortedProducts.length} products
                             </p>
                         ) : (
                             <p className="text-lg text-gray-200">Discover Our Latest Collections</p>
@@ -354,40 +388,47 @@ export default function Shop() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {sortedProducts.map((product) => {
+                        {sortedProducts.map((product, index) => {
                             const productId = product._id || product.id;
                             const productImage = product.images?.[0] || product.image;
                             return (
-                                <div key={productId} className="group">
+                                <div
+                                    key={productId}
+                                    ref={(el) => (cardRefs.current[index] = el)}
+                                    className="group transform-gpu transition-all duration-300"
+                                    style={{ transformStyle: 'preserve-3d' }}
+                                >
                                     {/* Collab Label and Heart */}
-                                    <div className="mb-4 flex justify-between items-start">
-                                        <span className="bg-black text-white text-xs font-bold px-3 py-1">
+                                    {/* <div className="mb-4 flex justify-between items-start" style={{ transform: 'translateZ(20px)' }}>
+                                        <span className="bg-black text-white text-xs font-bold px-3 py-1 shadow-lg">
                                             Collab
                                         </span>
                                         <button
                                             onClick={() => toggleFavorite(productId)}
-                                            className={`p-2 rounded-full transition-all duration-300 ${favorites.has(productId)
+                                            className={`p-2 rounded-full transition-all duration-300 shadow-lg ${favorites.has(productId)
                                                 ? 'bg-red-500 text-white'
                                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                                 }`}
+                                            style={{ transform: 'translateZ(20px)' }}
                                         >
                                             <Heart
                                                 size={18}
                                                 fill={favorites.has(productId) ? 'currentColor' : 'none'}
                                             />
                                         </button>
-                                    </div>
+                                    </div> */}
 
                                     {/* Product Image */}
                                     <div
                                         onClick={() => navigate(`/product/${productId}`)}
-                                        className="relative bg-gray-100 rounded-lg overflow-hidden mb-4 h-64 flex items-center justify-center group cursor-pointer"
+                                        className="relative bg-gray-100 rounded-lg overflow-hidden mb-4 h-80 flex items-center justify-center group cursor-pointer shadow-xl"
+                                        style={{ transform: 'translateZ(40px)' }}
                                     >
                                         {productImage ? (
                                             <img
                                                 src={productImage}
                                                 alt={product.name}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                                className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-700 ease-out"
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300"></div>
@@ -422,11 +463,12 @@ export default function Shop() {
                                     <h3
                                         onClick={() => navigate(`/product/${productId}`)}
                                         className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 cursor-pointer transition-colors"
+                                        style={{ transform: 'translateZ(25px)' }}
                                     >
                                         {product.name}
                                     </h3>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-2" style={{ transform: 'translateZ(25px)' }}>
                                         <p className="text-lg font-bold text-gray-900">
                                             {formatPrice(product.price)}
                                         </p>
