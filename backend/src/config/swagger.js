@@ -26,6 +26,7 @@ const swaggerSpec = {
     { name: 'Orders', description: 'Order management' },
     { name: 'OrderItems', description: 'Order item management' },
     { name: 'Payments', description: 'Payment management' },
+    { name: 'VNPay', description: 'VNPay payment integration' },
   ],
   components: {
     securitySchemes: {
@@ -423,6 +424,32 @@ const swaggerSpec = {
           paymentStatus: { type: 'string', example: 'paid' },
           transactionCode: { type: 'string', example: 'TXN123' },
           paidAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      VnpayCreateRequest: {
+        type: 'object',
+        required: ['orderId'],
+        properties: {
+          orderId: { type: 'string', example: 'ORDER_ID' },
+          returnUrl: { type: 'string', example: 'http://localhost:5173/payment/vnpay-return' },
+          locale: { type: 'string', example: 'vn' },
+          bankCode: { type: 'string', example: 'NCB' },
+        },
+      },
+      VnpayCreateResponse: {
+        type: 'object',
+        properties: {
+          paymentUrl: { type: 'string' },
+          orderId: { type: 'string' },
+        },
+      },
+      VnpayReturnResponse: {
+        type: 'object',
+        properties: {
+          isVerified: { type: 'boolean' },
+          isSuccess: { type: 'boolean' },
+          orderId: { type: 'string' },
+          message: { type: 'string' },
         },
       },
     },
@@ -1756,6 +1783,71 @@ const swaggerSpec = {
         responses: {
           200: { description: 'OK' },
           404: { description: 'Not found' },
+        },
+      },
+    },
+    '/vnpay/create': {
+      post: {
+        tags: ['VNPay'],
+        summary: 'Create VNPay payment URL',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/VnpayCreateRequest' } },
+          },
+        },
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/VnpayCreateResponse' } },
+            },
+          },
+          400: { description: 'Bad request' },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+          404: { description: 'Order not found' },
+        },
+      },
+    },
+    '/vnpay/return': {
+      get: {
+        tags: ['VNPay'],
+        summary: 'Handle VNPay return URL',
+        security: [],
+        parameters: [
+          { name: 'vnp_TxnRef', in: 'query', schema: { type: 'string' } },
+          { name: 'vnp_Amount', in: 'query', schema: { type: 'string' } },
+          { name: 'vnp_ResponseCode', in: 'query', schema: { type: 'string' } },
+          { name: 'vnp_TransactionNo', in: 'query', schema: { type: 'string' } },
+          { name: 'vnp_SecureHash', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/VnpayReturnResponse' } },
+            },
+          },
+          400: { description: 'Invalid VNPay return data' },
+        },
+      },
+    },
+    '/vnpay/ipn': {
+      get: {
+        tags: ['VNPay'],
+        summary: 'Handle VNPay IPN callback',
+        security: [],
+        parameters: [
+          { name: 'vnp_TxnRef', in: 'query', schema: { type: 'string' } },
+          { name: 'vnp_Amount', in: 'query', schema: { type: 'string' } },
+          { name: 'vnp_ResponseCode', in: 'query', schema: { type: 'string' } },
+          { name: 'vnp_TransactionNo', in: 'query', schema: { type: 'string' } },
+          { name: 'vnp_SecureHash', in: 'query', schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'OK' },
         },
       },
     },
