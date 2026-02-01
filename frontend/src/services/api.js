@@ -21,6 +21,11 @@ export const authAPI = {
     const response = await api.put("/users/me", userData);
     return response.data;
   },
+
+  changePassword: async (passwordData) => {
+    const response = await api.put("/users/change-password", passwordData);
+    return response.data;
+  },
 };
 
 export const productAPI = {
@@ -117,6 +122,11 @@ export const orderAPI = {
 
   getById: async (id) => {
     const response = await api.get(`/orders/${id}`);
+    return response.data;
+  },
+
+  getMyOrders: async () => {
+    const response = await api.get("/orders/my");
     return response.data;
   },
 };

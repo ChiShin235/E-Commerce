@@ -10,6 +10,7 @@ import Detailcard from '../pages/Detail-card/Detailcard';
 import Cart from './components/cart/Cart';
 import Order from '../pages/order/Order';
 import Shop from '../pages/shop/shop';
+import Profile from '../pages/profile/Profile';
 
 function App() {
   return (
@@ -25,6 +26,11 @@ function App() {
             <Route path="/order" element={
               <ProtectedRoute>
                 <Order />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
             <Route path="/login" element={<AuthPage />} />

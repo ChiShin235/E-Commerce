@@ -96,6 +96,22 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  // Cập nhật thông tin user
+  const updateUser = async () => {
+    try {
+      const response = await authAPI.getCurrentUser();
+      if (response.success) {
+        const updatedUser = response.data.user;
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        return { success: true };
+      }
+    } catch (error) {
+      console.error('Update user error:', error);
+      return { success: false };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -103,6 +119,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
