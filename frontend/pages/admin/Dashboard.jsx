@@ -117,18 +117,24 @@ export default function AdminDashboard() {
                     />
                 </div>
                 <nav className="flex-1 mt-4">
-                    <a href="#" className="flex items-center px-6 py-3 bg-indigo-800 border-l-4 border-blue-400">
+                    <button
+                        onClick={() => navigate('/admin/dashboard')}
+                        className="w-full flex items-center px-6 py-3 bg-indigo-800 border-l-4 border-blue-400 text-left"
+                    >
                         <i className="fas fa-chart-line mr-3"></i> Dashboard
-                    </a>
-                    <a href="#" className="flex items-center px-6 py-3 hover:bg-indigo-800 transition">
+                    </button>
+                    <button
+                        onClick={() => navigate('/admin/users')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                    >
                         <i className="fas fa-users mr-3"></i> Người dùng
-                    </a>
-                    <a href="#" className="flex items-center px-6 py-3 hover:bg-indigo-800 transition">
+                    </button>
+                    <button
+                        onClick={() => navigate('/admin/products')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                    >
                         <i className="fas fa-box mr-3"></i> Sản phẩm
-                    </a>
-                    <a href="#" className="flex items-center px-6 py-3 hover:bg-indigo-800 transition">
-                        <i className="fas fa-shopping-cart mr-3"></i> Đơn hàng
-                    </a>
+                    </button>
                     <button
                         onClick={() => navigate('/')}
                         className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"

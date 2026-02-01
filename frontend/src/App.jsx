@@ -15,6 +15,8 @@ import Profile from '../pages/profile/Profile';
 import About from '../pages/about/About';
 import Contact from '../pages/contact/contact';
 import AdminDashboard from '../pages/admin/Dashboard';
+import ProductManagement from '../pages/admin/ProductManagement';
+import UserManagement from '../pages/admin/UserManagement';
 
 function App() {
   return (
@@ -42,6 +44,16 @@ function App() {
             <Route path="/admin/dashboard" element={
               <AdminRoute>
                 <AdminDashboard />
+              </AdminRoute>
+            } />
+            <Route path="/admin/users" element={
+              <AdminRoute>
+                <UserManagement />
+              </AdminRoute>
+            } />
+            <Route path="/admin/products" element={
+              <AdminRoute>
+                <ProductManagement />
               </AdminRoute>
             } />
             <Route path="/login" element={<AuthPage />} />

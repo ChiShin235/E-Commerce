@@ -50,6 +50,22 @@ export const productAPI = {
     });
     return response.data;
   },
+
+  // Admin CRUD operations
+  create: async (productData) => {
+    const response = await api.post("/products", productData);
+    return response.data;
+  },
+
+  update: async (id, productData) => {
+    const response = await api.put(`/products/${id}`, productData);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/products/${id}`);
+    return response.data;
+  },
 };
 
 export const categoryAPI = {
@@ -134,6 +150,50 @@ export const orderAPI = {
 export const vnpayAPI = {
   createPaymentUrl: async (payload) => {
     const response = await api.post("/vnpay/create", payload);
+    return response.data;
+  },
+};
+
+export const userAPI = {
+  getAll: async () => {
+    const response = await api.get("/users");
+    return response.data;
+  },
+
+  getById: async (id) => {
+    const response = await api.get(`/users/${id}`);
+    return response.data;
+  },
+
+  create: async (userData) => {
+    const response = await api.post("/users/register", userData);
+    return response.data;
+  },
+
+  update: async (id, userData) => {
+    const response = await api.put(`/users/${id}`, userData);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/users/${id}`);
+    return response.data;
+  },
+
+  assignRoles: async (userId, roleIds) => {
+    const response = await api.post(`/users/${userId}/roles`, { roleIds });
+    return response.data;
+  },
+};
+
+export const roleAPI = {
+  getAll: async () => {
+    const response = await api.get("/roles");
+    return response.data;
+  },
+
+  getById: async (id) => {
+    const response = await api.get(`/roles/${id}`);
     return response.data;
   },
 };
