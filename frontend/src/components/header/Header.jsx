@@ -53,7 +53,7 @@ export default function Header() {
     ];
 
     return (
-        <header className="bg-white">
+        <header className="bg-white sticky top-0 z-50 shadow-md">
             {/* Top navigation bar */}
             <div className="border-b border-gray-200">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-1">
@@ -64,7 +64,7 @@ export default function Header() {
                             <div
                                 onClick={() => navigate('/')}
                                 className="w-14 h-14 bg-black rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-800 transition-colors duration-200">
-                                <span className="text-white font-bold text-lg">SK</span>
+                                <span className="text-white font-bold text-lg">TEAM2</span>
                             </div>
                         </div>
 

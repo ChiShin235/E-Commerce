@@ -44,12 +44,24 @@ export default function Detailcard() {
 
     const handleAddToCart = (e) => {
         e?.stopPropagation();
+
+        if (!selectedSize || selectedSize.trim() === '') {
+            toast.error('Please select a size before adding to the cart!');
+            return;
+        }
+
         console.log('🛒 handleAddToCart called in Detailcard');
         addToCart(product, selectedSize, 1);
-        toast.success(`Đã thêm sản phẩm vào giỏ hàng!`);
+        toast.success(`Product added to cart!`);
+        setSelectedSize(''); // Reset size sau khi add thành công
     };
 
     const handleBuyNow = () => {
+        if (!selectedSize || selectedSize.trim() === '') {
+            toast.error('Please select a size before buying!');
+            return;
+        }
+
         addToCart(product, selectedSize, quantity);
         navigate('/cart');
     };
@@ -88,21 +100,14 @@ export default function Detailcard() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
 
                     {/* Left Side - Product Image */}
-                    <div className="relative">
-                        {/* Collab Label */}
-                        <div className="absolute top-4 left-4 z-10">
-                            <span className="bg-black text-white text-sm font-bold px-4 py-2">
-                                Collab
-                            </span>
-                        </div>
-
+                    <div className="relative group">
                         {/* Product Image */}
-                        <div className="bg-pink-50 rounded-lg overflow-hidden aspect-square flex items-center justify-center">
+                        <div className="bg-pink-50 rounded-lg overflow-hidden aspect-square flex items-center justify-center cursor-pointer">
                             {(product.images?.[0] || product.image) ? (
                                 <img
                                     src={product.images?.[0] || product.image}
                                     alt={product.name}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pink-100 to-pink-200">
@@ -160,12 +165,14 @@ export default function Detailcard() {
                         {/* Size Selection */}
                         {product.size && (
                             <div className="mb-6">
-                                <h3 className="text-sm font-medium text-gray-900 mb-3">Choose size</h3>
+                                <h3 className="text-sm font-medium text-gray-900 mb-3">
+                                    Choose size <span className="text-red-600">*</span>
+                                </h3>
                                 <div className="grid grid-cols-5 gap-3">
                                     {product.size.split(/[,\s]+/).filter(s => s.trim()).map((size) => (
                                         <button
                                             key={size}
-                                            onClick={() => setSelectedSize(size)}
+                                            onClick={() => setSelectedSize(selectedSize === size ? '' : size)}
                                             className={`relative py-3 border-2 text-center font-medium transition-all duration-200 ${selectedSize === size
                                                 ? 'border-black bg-white'
                                                 : 'border-gray-300 bg-white hover:border-gray-400'

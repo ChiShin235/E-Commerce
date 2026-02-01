@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 export default function QuickViewModal({ product, isOpen, onClose }) {
     const navigate = useNavigate();
     const { addToCart } = useCart();
-    const [selectedSize, setSelectedSize] = useState('XS');
+    const [selectedSize, setSelectedSize] = useState('');
     const [quantity, setQuantity] = useState(1);
 
     if (!isOpen || !product) return null;
@@ -32,9 +32,22 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
 
     const handleAddToCart = (e) => {
         e?.stopPropagation();
+
+        if (!selectedSize || selectedSize.trim() === '') {
+            toast.error('Please select a size before adding to the cart!');
+            return;
+        }
+
+        if (quantity > product.stock) {
+            toast.error(`Only ${product.stock} items available in stock!`);
+            return;
+        }
+
         console.log('🛒 handleAddToCart called in QuickViewModal');
-        addToCart(product, selectedSize, 1);
-        toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
+        addToCart(product, selectedSize, quantity);
+        toast.success(`Product ${product.name} (x${quantity}) added to cart!`);
+        setSelectedSize(''); // Reset size
+        setQuantity(1); // Reset quantity
         onClose();
     };
 
@@ -174,12 +187,14 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
 
                         {/* Size Selection */}
                         <div className="mb-6">
-                            <h3 className="text-sm font-medium text-gray-700 mb-3">Size</h3>
+                            <h3 className="text-sm font-medium text-gray-700 mb-3">
+                                Size <span className="text-red-600">*</span>
+                            </h3>
                             <div className="flex gap-2 flex-wrap">
                                 {availableSizes.map((size) => (
                                     <button
                                         key={size}
-                                        onClick={() => setSelectedSize(size)}
+                                        onClick={() => setSelectedSize(selectedSize === size ? '' : size)}
                                         className={`px-6 py-2 border-2 font-medium transition-all ${selectedSize === size
                                             ? 'bg-red-600 text-white border-red-600'
                                             : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
@@ -192,39 +207,48 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
                         </div>
 
                         {/* Quantity Selector */}
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="flex items-center border-2 border-gray-300 rounded">
+                        <div className="mb-6">
+                            <h3 className="text-sm font-medium text-gray-700 mb-2">
+                                Quantity {product.stock > 0 && <span className="text-gray-500 font-normal">({product.stock} available)</span>}
+                            </h3>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center border-2 border-gray-300 rounded">
+                                    <button
+                                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                        className="px-4 py-2 hover:bg-gray-100 transition-colors"
+                                    >
+                                        <Minus size={16} />
+                                    </button>
+                                    <input
+                                        type="text"
+                                        value={quantity}
+                                        readOnly
+                                        className="w-16 text-center py-2 border-x-2 border-gray-300 outline-none"
+                                    />
+                                    <button
+                                        onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                                        disabled={quantity >= product.stock}
+                                        className={`px-4 py-2 transition-colors ${quantity >= product.stock
+                                                ? 'cursor-not-allowed opacity-50'
+                                                : 'hover:bg-gray-100'
+                                            }`}
+                                    >
+                                        <Plus size={16} />
+                                    </button>
+                                </div>
+
+                                {/* Add to Cart Button */}
                                 <button
-                                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                    className="px-4 py-2 hover:bg-gray-100 transition-colors"
+                                    onClick={handleAddToCart}
+                                    disabled={!isInStock}
+                                    className={`flex-1 font-bold py-3 px-6 transition-colors ${isInStock
+                                        ? 'bg-red-600 text-white hover:bg-red-700'
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                        }`}
                                 >
-                                    <Minus size={16} />
-                                </button>
-                                <input
-                                    type="text"
-                                    value={quantity}
-                                    readOnly
-                                    className="w-16 text-center py-2 border-x-2 border-gray-300 outline-none"
-                                />
-                                <button
-                                    onClick={() => setQuantity(quantity + 1)}
-                                    className="px-4 py-2 hover:bg-gray-100 transition-colors"
-                                >
-                                    <Plus size={16} />
+                                    {isInStock ? 'ADD TO CART' : 'Sold Out'}
                                 </button>
                             </div>
-
-                            {/* Add to Cart Button */}
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={!isInStock}
-                                className={`flex-1 font-bold py-3 px-6 transition-colors ${isInStock
-                                    ? 'bg-red-600 text-white hover:bg-red-700'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                    }`}
-                            >
-                                {isInStock ? 'ADD TO CART' : 'HẾT HÀNG'}
-                            </button>
                         </div>
                     </div>
                 </div>

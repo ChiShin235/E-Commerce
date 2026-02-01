@@ -22,7 +22,11 @@ function App() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/product/:id" element={<Detailcard />} />
             <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Payment />} />
+            <Route path="/checkout" element={
+              <ProtectedRoute>
+                <Payment />
+              </ProtectedRoute>
+            } />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/register" element={<AuthPage />} />
             {/* <Route

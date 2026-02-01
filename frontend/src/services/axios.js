@@ -25,13 +25,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Chỉ redirect khi 401 VÀ không phải đang ở trang login/register
+    // Chỉ redirect khi 401 VÀ là trang yêu cầu auth (cart, checkout, profile)
     if (error.response?.status === 401) {
       const currentPath = window.location.pathname;
       const isAuthPage =
         currentPath === "/login" || currentPath === "/register";
+      const isPublicPage =
+        currentPath === "/" ||
+        currentPath === "/shop" ||
+        currentPath.startsWith("/product/");
 
-      if (!isAuthPage) {
+      // Chỉ redirect nếu không phải auth page và không phải public page
+      if (!isAuthPage && !isPublicPage) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.location.href = "/login";

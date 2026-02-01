@@ -1,15 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, ChevronLeft, ChevronRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { productAPI } from '../../services/api';
+import VanillaTilt from 'vanilla-tilt';
 import Header from '../header/Header';
 import Footer from '../footer/Footer';
 
 export default function Cart() {
     const navigate = useNavigate();
     const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useCart();
+    const { isAuthenticated } = useAuth();
     const [relatedProducts, setRelatedProducts] = useState([]);
+    const cardRefs = useRef([]);
+    const scrollContainerRef = useRef(null);
+
+    const scrollLeft = () => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollBy({ left: -250, behavior: 'smooth' });
+        }
+    };
+
+    const scrollRight = () => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollBy({ left: 250, behavior: 'smooth' });
+        }
+    };
 
     const fetchRelatedProducts = async () => {
         try {
@@ -25,6 +42,33 @@ export default function Cart() {
         fetchRelatedProducts();
     }, []);
 
+    useEffect(() => {
+        // Initialize VanillaTilt for related product cards
+        cardRefs.current.forEach((card) => {
+            if (card && !card.vanillaTilt) {
+                VanillaTilt.init(card, {
+                    max: 25,
+                    speed: 3000,
+                    glare: true,
+                    'max-glare': 0.25,
+                    perspective: 1400,
+                    scale: 1.03,
+                    easing: 'cubic-bezier(0.03, 0.98, 0.52, 0.99)',
+                    transition: true,
+                });
+            }
+        });
+
+        // Cleanup function
+        return () => {
+            cardRefs.current.forEach((card) => {
+                if (card?.vanillaTilt) {
+                    card.vanillaTilt.destroy();
+                }
+            });
+        };
+    }, [relatedProducts]);
+
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -34,6 +78,11 @@ export default function Cart() {
     };
 
     const handleCheckout = () => {
+        // Check if user is logged in
+        if (!isAuthenticated) {
+            navigate('/login');
+            return;
+        }
         // Navigate to checkout page
         navigate('/checkout');
     };
@@ -122,9 +171,13 @@ export default function Cart() {
                                                         <span className="w-12 text-center font-medium">{item.quantity}</span>
                                                         <button
                                                             onClick={() =>
-                                                                updateQuantity(productId, item.size, item.quantity + 1)
+                                                                updateQuantity(productId, item.size, Math.min(item.product.stock, item.quantity + 1))
                                                             }
-                                                            className="w-8 h-8 flex items-center justify-center border border-gray-300 hover:bg-gray-100 transition-colors"
+                                                            disabled={item.quantity >= item.product.stock}
+                                                            className={`w-8 h-8 flex items-center justify-center border border-gray-300 transition-colors ${item.quantity >= item.product.stock
+                                                                ? 'cursor-not-allowed opacity-50 bg-gray-100'
+                                                                : 'hover:bg-gray-100'
+                                                                }`}
                                                         >
                                                             <ChevronRight size={16} />
                                                         </button>
@@ -157,7 +210,7 @@ export default function Cart() {
                             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 sticky top-4">
                                 <div className="space-y-4">
                                     <div className="flex justify-between items-center pb-4 border-b border-gray-300">
-                                        <span className="font-medium text-gray-700">Tổng tiền:</span>
+                                        <span className="font-medium text-gray-700">Total:</span>
                                         <span className="text-2xl font-bold text-gray-900">
                                             {formatPrice(getCartTotal())}
                                         </span>
@@ -167,14 +220,14 @@ export default function Cart() {
                                         onClick={handleCheckout}
                                         className="w-full bg-black text-white py-4 px-6 font-bold hover:bg-gray-800 transition-colors rounded-lg"
                                     >
-                                        THANH TOÁN
+                                        CHECKOUT
                                     </button>
 
                                     <button
                                         onClick={() => navigate('/')}
                                         className="w-full border-2 border-gray-300 text-gray-700 py-3 px-6 font-medium hover:bg-gray-100 transition-colors rounded-lg"
                                     >
-                                        Tiếp tục mua sắm
+                                        Continue Shopping
                                     </button>
                                 </div>
                             </div>
@@ -184,41 +237,91 @@ export default function Cart() {
 
                 {/* Related Products Section */}
                 {relatedProducts.length > 0 && (
-                    <div className="mt-16">
+                    <div className="mt-16 relative">
                         <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">
-                            CÁC SẢN PHẨM KHÁC
+                            Other Products
                         </h2>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
-                            {relatedProducts.map((product) => {
-                                const productId = product._id || product.id;
-                                const productImage = product.images?.[0] || product.image;
-                                return (
-                                    <div
-                                        key={productId}
-                                        onClick={() => navigate(`/product/${productId}`)}
-                                        className="group cursor-pointer"
-                                    >
-                                        <div className="bg-gray-100 rounded-lg overflow-hidden mb-3 aspect-square">
-                                            {productImage ? (
-                                                <img
-                                                    src={productImage}
-                                                    alt={product.name}
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full bg-gray-200"></div>
-                                            )}
+                        {/* Navigation Buttons */}
+                        <button
+                            onClick={scrollLeft}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg transition-all hover:scale-110"
+                            aria-label="Scroll left"
+                        >
+                            <ChevronLeft size={24} className="text-gray-800" />
+                        </button>
+                        <button
+                            onClick={scrollRight}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg transition-all hover:scale-110"
+                            aria-label="Scroll right"
+                        >
+                            <ChevronRight size={24} className="text-gray-800" />
+                        </button>
+
+                        <div ref={scrollContainerRef} className="overflow-x-auto pb-4 scrollbar-hide" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                            <div className="flex gap-6 min-w-min">
+                                {relatedProducts.map((product, index) => {
+                                    const productId = product._id || product.id;
+                                    const productImage = product.images?.[0] || product.image;
+                                    return (
+                                        <div
+                                            key={productId}
+                                            ref={(el) => (cardRefs.current[index] = el)}
+                                            className="group transform-gpu transition-all duration-300 flex-shrink-0 w-48"
+                                            style={{ transformStyle: 'preserve-3d' }}
+                                        >
+                                            {/* Product Image Container */}
+                                            <div
+                                                onClick={() => navigate(`/product/${productId}`)}
+                                                className="relative bg-gray-100 rounded-lg overflow-hidden mb-3 aspect-square cursor-pointer shadow-lg"
+                                                style={{ transform: 'translateZ(20px)' }}
+                                            >
+                                                {productImage ? (
+                                                    <img
+                                                        src={productImage}
+                                                        alt={product.name}
+                                                        className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-700 ease-out"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                                        <ShoppingBag size={32} className="text-gray-400" />
+                                                    </div>
+                                                )}
+
+                                                {/* Hover Overlay with Button */}
+                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/product/${productId}`);
+                                                        }}
+                                                        className="bg-white text-black font-bold px-4 py-2 rounded hover:bg-gray-200 transition-colors text-xs whitespace-nowrap"
+                                                    >
+                                                        View Detail
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Product Name */}
+                                            <h3
+                                                onClick={() => navigate(`/product/${productId}`)}
+                                                className="text-sm font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 cursor-pointer transition-colors"
+                                                style={{ transform: 'translateZ(15px)' }}
+                                            >
+                                                {product.name}
+                                            </h3>
+
+                                            {/* Product Price */}
+                                            <p
+                                                className="text-sm font-semibold text-gray-900"
+                                                style={{ transform: 'translateZ(15px)' }}
+                                            >
+                                                {formatPrice(product.price)}
+                                            </p>
                                         </div>
-                                        <h3 className="text-sm font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600">
-                                            {product.name}
-                                        </h3>
-                                        <p className="text-sm font-semibold text-gray-900">
-                                            {formatPrice(product.price)}
-                                        </p>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 )}

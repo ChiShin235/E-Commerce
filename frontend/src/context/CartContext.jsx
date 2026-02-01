@@ -44,9 +44,12 @@ export const CartProvider = ({ children }) => {
             // Add or update each item
             for (const item of items) {
                 const productId = item.product._id || item.product.id;
-                const existing = backendItems.find(
-                    (bi) => (bi.product._id || bi.product) === productId && bi.size === item.size
-                );
+                const existing = backendItems.find((bi) => {
+                    const backendProductId = typeof bi.product === 'object'
+                        ? (bi.product._id || bi.product.id)
+                        : bi.product;
+                    return backendProductId === productId && bi.size === item.size;
+                });
 
                 if (existing) {
                     await cartItemAPI.updateItem(existing._id, item.quantity, item.product.price);
@@ -193,6 +196,8 @@ export const CartProvider = ({ children }) => {
     };
 
     const removeFromCart = async (productId, size) => {
+        console.log('🗑️ removeFromCart called:', { productId, size });
+
         setCartItems((prevItems) =>
             prevItems.filter((item) => {
                 const itemProductId = item.product._id || item.product.id;
@@ -203,22 +208,45 @@ export const CartProvider = ({ children }) => {
         // Remove from backend if authenticated
         if (isAuthenticated && user && backendCartId) {
             try {
+                console.log('🔍 Finding item to delete in backend...');
                 const response = await cartItemAPI.getByCart(backendCartId);
                 const backendItems = Array.isArray(response) ? response : (response.data || []);
-                const itemToDelete = backendItems.find(
-                    (bi) => (bi.product._id || bi.product) === productId && bi.size === size
-                );
+
+                console.log('Backend items:', backendItems.length);
+
+                const itemToDelete = backendItems.find((bi) => {
+                    // Handle both populated (object) and unpopulated (string) product
+                    const backendProductId = typeof bi.product === 'object'
+                        ? (bi.product._id || bi.product.id)
+                        : bi.product;
+                    const matches = backendProductId === productId && bi.size === size;
+
+                    if (matches) {
+                        console.log('✅ Found matching item:', bi._id);
+                    }
+
+                    return matches;
+                });
+
                 if (itemToDelete) {
+                    console.log('🗑️ Deleting item from backend:', itemToDelete._id);
                     await cartItemAPI.deleteItem(itemToDelete._id);
-                    console.log('✅ Removed from backend');
+                    console.log('✅ Removed from backend successfully');
+                } else {
+                    console.log('⚠️ Item not found in backend');
                 }
             } catch (error) {
                 console.error('❌ Error removing from backend:', error);
+                console.error('Error details:', error.response?.data || error.message);
             }
+        } else {
+            console.log('ℹ️ Not authenticated or no backend cart, skipping backend removal');
         }
     };
 
     const updateQuantity = async (productId, size, quantity) => {
+        console.log('📝 updateQuantity called:', { productId, size, quantity });
+
         if (quantity < 1) {
             removeFromCart(productId, size);
             return;
@@ -238,15 +266,23 @@ export const CartProvider = ({ children }) => {
             try {
                 const response = await cartItemAPI.getByCart(backendCartId);
                 const backendItems = Array.isArray(response) ? response : (response.data || []);
-                const itemToUpdate = backendItems.find(
-                    (bi) => (bi.product._id || bi.product) === productId && bi.size === size
-                );
+
+                const itemToUpdate = backendItems.find((bi) => {
+                    const backendProductId = typeof bi.product === 'object'
+                        ? (bi.product._id || bi.product.id)
+                        : bi.product;
+                    return backendProductId === productId && bi.size === size;
+                });
+
                 if (itemToUpdate) {
                     await cartItemAPI.updateItem(itemToUpdate._id, quantity, itemToUpdate.price);
                     console.log('✅ Updated in backend');
+                } else {
+                    console.log('⚠️ Item not found in backend for update');
                 }
             } catch (error) {
                 console.error('❌ Error updating in backend:', error);
+                console.error('Error details:', error.response?.data || error.message);
             }
         }
     };

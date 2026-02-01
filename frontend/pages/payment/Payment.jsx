@@ -1,26 +1,29 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../src/context/CartContext';
+import { useAuth } from '../../src/context/AuthContext';
+import { orderAPI } from '../../src/services/api';
 import { toast } from 'sonner';
+import Header from '../../src/components/header/Header';
+import Footer from '../../src/components/footer/Footer';
 
 export default function Payment() {
     const navigate = useNavigate();
     const { cartItems, getCartTotal, clearCart } = useCart();
-    const [paymentMethod, setPaymentMethod] = useState('vietqr');
-    const [couponCode, setCouponCode] = useState('');
-    const [discount, setDiscount] = useState(0);
+    const { user } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState('cod'); // cod, vnpay
     const [formData, setFormData] = useState({
-        email: '',
-        fullName: '',
-        phone: '',
+        email: user?.email || '',
+        firstName: '',
+        lastName: '',
+        phone: user?.phone || '',
         address: '',
-        city: '',
         district: '',
-        ward: '',
-        note: '',
+        city: '',
     });
 
-    const shippingFee = 0; // Free shipping
+    const shippingFee = 0; // Miễn phí
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('vi-VN', {
@@ -38,38 +41,69 @@ export default function Payment() {
         }));
     };
 
-    const handleApplyCoupon = () => {
-        if (couponCode) {
-            // Mock coupon validation
-            toast.success('Mã giảm giá đã được áp dụng!');
-            setDiscount(50000);
-        }
-    };
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         // Validate form
-        if (!formData.email || !formData.fullName || !formData.phone || !formData.address) {
+        if (!formData.email || !formData.firstName || !formData.lastName || !formData.phone || !formData.address || !formData.district || !formData.city) {
             toast.error('Vui lòng điền đầy đủ thông tin!');
             return;
         }
 
-        // Process order
-        console.log('Order data:', {
-            formData,
-            cartItems,
-            paymentMethod,
-            total: getCartTotal() - discount + shippingFee,
-        });
+        // Validate phone
+        const phoneRegex = /^[0-9]{10,11}$/;
+        if (!phoneRegex.test(formData.phone)) {
+            toast.error('Số điện thoại không hợp lệ!');
+            return;
+        }
 
-        toast.success('Đặt hàng thành công!');
-        clearCart();
-        navigate('/');
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            toast.error('Email không hợp lệ!');
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            // Prepare order data
+            const orderData = {
+                user: user._id || user.id,
+                items: cartItems.map(item => ({
+                    product: item.product._id || item.product.id || item.product,
+                    quantity: item.quantity,
+                    price: item.price,
+                })),
+                status: 'pending',
+                shippingAddress: {
+                    firstName: formData.firstName,
+                    lastName: formData.lastName,
+                    phone: formData.phone,
+                    address: formData.address,
+                    district: formData.district,
+                    city: formData.city,
+                },
+                email: formData.email,
+            };
+
+            console.log('Creating order:', orderData);
+            const response = await orderAPI.create(orderData);
+            console.log('Order created:', response);
+
+            toast.success('Đặt hàng thành công!');
+            clearCart();
+            navigate('/');
+        } catch (error) {
+            console.error('Order creation error:', error);
+            toast.error(error.response?.data?.message || 'Đặt hàng thất bại! Vui lòng thử lại.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const subtotal = getCartTotal();
-    const total = subtotal - discount + shippingFee;
+    const total = subtotal + shippingFee;
 
     if (cartItems.length === 0) {
         return (
@@ -78,7 +112,7 @@ export default function Payment() {
                     <p className="text-gray-600 text-lg mb-6">Giỏ hàng của bạn đang trống</p>
                     <button
                         onClick={() => navigate('/')}
-                        className="bg-blue-600 text-white px-8 py-3 font-bold hover:bg-blue-700 transition-colors"
+                        className="bg-black text-white px-8 py-3 font-bold hover:bg-gray-800 transition-colors"
                     >
                         Quay về trang chủ
                     </button>
@@ -88,334 +122,229 @@ export default function Payment() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Logo */}
+        <div className="min-h-screen bg-white">
+            <Header />
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Header */}
                 <div className="mb-8">
-                    <div
-                        onClick={() => navigate('/')}
-                        className="w-16 h-16 bg-red-600 flex items-center justify-center cursor-pointer hover:bg-red-700 transition-colors"
-                    >
-                        <svg
-                            className="w-10 h-10 text-white"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                        </svg>
+                    <h1 className="text-2xl font-bold mb-2">FASHION LAB</h1>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <span className="cursor-pointer hover:text-gray-700" onClick={() => navigate('/cart')}>GIỎ HÀNG</span>
+                        <span>&gt;</span>
+                        <span className="font-medium text-gray-900">THÔNG TIN</span>
+                        <span>&gt;</span>
+                        <span>VẬN CHUYỂN</span>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Left Column - Customer Information */}
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* Customer Info Section */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-xl font-bold text-gray-900">Thông tin nhận hàng</h2>
-                                    <button type="button" className="text-blue-600 text-sm hover:underline flex items-center gap-1">
-                                        <span className="w-5 h-5 rounded-full border-2 border-blue-600 flex items-center justify-center">
-                                            <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                                        </span>
-                                        Đăng nhập
-                                    </button>
-                                </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                        {/* Left Column - Form */}
+                        <div>
+                            {/* Customer Information */}
+                            <div className="mb-8">
+                                <h2 className="text-lg font-semibold mb-4">Thông tin khách hàng</h2>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    placeholder="Email nhận thông báo"
+                                    className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
+                                    required
+                                />
+                            </div>
 
+                            {/* Shipping Address */}
+                            <div>
+                                <h2 className="text-lg font-semibold mb-4">Địa chỉ nhận hàng</h2>
                                 <div className="space-y-4">
-                                    {/* Email */}
-                                    <div>
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            placeholder="Email"
-                                            value={formData.email}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        />
-                                    </div>
-
-                                    {/* Full Name */}
-                                    <div>
+                                    <div className="grid grid-cols-2 gap-4">
                                         <input
                                             type="text"
-                                            name="fullName"
-                                            placeholder="Họ và tên"
-                                            value={formData.fullName}
+                                            name="firstName"
+                                            value={formData.firstName}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Họ"
+                                            className="px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                             required
                                         />
-                                    </div>
-
-                                    {/* Phone */}
-                                    <div className="flex gap-2">
-                                        <div className="w-20 flex items-center justify-center border border-gray-300 px-3">
-                                            <span className="text-2xl">🇻🇳</span>
-                                        </div>
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            placeholder="Số điện thoại"
-                                            value={formData.phone}
-                                            onChange={handleInputChange}
-                                            className="flex-1 px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            required
-                                        />
-                                    </div>
-
-                                    {/* Address */}
-                                    <div>
                                         <input
                                             type="text"
-                                            name="address"
-                                            placeholder="Địa chỉ"
-                                            value={formData.address}
+                                            name="lastName"
+                                            value={formData.lastName}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            placeholder="Tên"
+                                            className="px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                             required
                                         />
                                     </div>
 
-                                    {/* City/Province */}
-                                    <div>
-                                        <select
-                                            name="city"
-                                            value={formData.city}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-300 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Tỉnh thành</option>
-                                            <option value="hcm">Hồ Chí Minh</option>
-                                            <option value="hn">Hà Nội</option>
-                                            <option value="dn">Đà Nẵng</option>
-                                        </select>
-                                    </div>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        placeholder="Số điện thoại"
+                                        className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
+                                        required
+                                    />
 
-                                    {/* District */}
-                                    <div>
-                                        <select
+                                    <input
+                                        type="text"
+                                        name="address"
+                                        value={formData.address}
+                                        onChange={handleInputChange}
+                                        placeholder="Địa chỉ (Số nhà, tên đường...)"
+                                        className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
+                                        required
+                                    />
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input
+                                            type="text"
                                             name="district"
                                             value={formData.district}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-300 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Quận huyện</option>
-                                            <option value="q1">Quận 1</option>
-                                            <option value="q2">Quận 2</option>
-                                            <option value="q3">Quận 3</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Ward */}
-                                    <div>
-                                        <select
-                                            name="ward"
-                                            value={formData.ward}
+                                            placeholder="Quận/Huyện"
+                                            className="px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
+                                            required
+                                        />
+                                        <input
+                                            type="text"
+                                            name="city"
+                                            value={formData.city}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-3 border border-gray-300 text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Phường xã</option>
-                                            <option value="p1">Phường 1</option>
-                                            <option value="p2">Phường 2</option>
-                                            <option value="p3">Phường 3</option>
-                                        </select>
-                                    </div>
-
-                                    {/* Note */}
-                                    <div>
-                                        <textarea
-                                            name="note"
-                                            placeholder="Ghi chú (tùy chọn)"
-                                            value={formData.note}
-                                            onChange={handleInputChange}
-                                            rows={3}
-                                            className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                            placeholder="Thành phố"
+                                            className="px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
+                                            required
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Shipping Section */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <h2 className="text-xl font-bold text-gray-900 mb-4">Vận chuyển</h2>
-                                <div className="bg-blue-50 border border-blue-200 px-4 py-3 text-blue-800 text-sm">
-                                    Vui lòng nhập thông tin giao hàng
-                                </div>
-                            </div>
-
-                            {/* Payment Method Section */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <h2 className="text-xl font-bold text-gray-900 mb-4">Thanh toán</h2>
+                            {/* Payment Method */}
+                            <div className="mt-6">
+                                <h2 className="text-lg font-semibold mb-4">Phương thức thanh toán</h2>
                                 <div className="space-y-3">
-                                    {/* VietQR */}
-                                    <label className="flex items-center justify-between p-4 border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <input
-                                                type="radio"
-                                                name="payment"
-                                                value="vietqr"
-                                                checked={paymentMethod === 'vietqr'}
-                                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                                className="w-5 h-5 text-blue-600"
-                                            />
-                                            <span className="font-medium text-gray-900">Thanh toán qua VietQR</span>
-                                        </div>
-                                        <img
-                                            src="https://vietqr.io/img/vietqr-logo.svg"
-                                            alt="VietQR"
-                                            className="h-6"
-                                        />
-                                    </label>
-
                                     {/* COD */}
-                                    <label className="flex items-center justify-between p-4 border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <input
-                                                type="radio"
-                                                name="payment"
-                                                value="cod"
-                                                checked={paymentMethod === 'cod'}
-                                                onChange={(e) => setPaymentMethod(e.target.value)}
-                                                className="w-5 h-5 text-blue-600"
-                                            />
-                                            <span className="font-medium text-gray-900">Thanh toán khi giao hàng (COD)</span>
+                                    <label className="flex items-center gap-3 p-4 border-2 cursor-pointer transition-colors ${
+                                        paymentMethod === 'cod' ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-gray-400'
+                                    }">
+                                        <input
+                                            type="radio"
+                                            name="paymentMethod"
+                                            value="cod"
+                                            checked={paymentMethod === 'cod'}
+                                            onChange={(e) => setPaymentMethod(e.target.value)}
+                                            className="w-5 h-5 text-black focus:ring-black"
+                                        />
+                                        <div className="flex-1">
+                                            <p className="font-medium">Thanh toán khi nhận hàng (COD)</p>
+                                            <p className="text-sm text-gray-500 mt-1">Thanh toán bằng tiền mặt khi nhận hàng</p>
                                         </div>
-                                        <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"
-                                                clipRule="evenodd"
-                                            />
+                                            <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
                                         </svg>
                                     </label>
+
+                                    {/* VNPay */}
+                                    <label className="flex items-center gap-3 p-4 border-2 cursor-pointer transition-colors ${
+                                        paymentMethod === 'vnpay' ? 'border-black bg-gray-50' : 'border-gray-300 hover:border-gray-400'
+                                    }">
+                                        <input
+                                            type="radio"
+                                            name="paymentMethod"
+                                            value="vnpay"
+                                            checked={paymentMethod === 'vnpay'}
+                                            onChange={(e) => setPaymentMethod(e.target.value)}
+                                            className="w-5 h-5 text-black focus:ring-black"
+                                        />
+                                        <div className="flex-1">
+                                            <p className="font-medium">Thanh toán qua VNPay</p>
+                                            <p className="text-sm text-gray-500 mt-1">Thanh toán qua cổng VNPay (ATM, Visa, MasterCard)</p>
+                                        </div>
+                                        <img
+                                            src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png"
+                                            alt="VNPay"
+                                            className="h-8"
+                                        />
+                                    </label>
                                 </div>
                             </div>
+
+                            {/* Submit Button */}
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full mt-8 bg-black text-white py-4 font-bold hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            >
+                                {loading ? 'ĐANG XỬ LÝ...' : 'HOÀN TẤT ĐẶT HÀNG'}
+                            </button>
                         </div>
 
                         {/* Right Column - Order Summary */}
-                        <div className="lg:col-span-1">
-                            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
-                                <h2 className="text-lg font-bold text-gray-900 mb-4">
-                                    Đơn hàng ({cartItems.length} sản phẩm)
-                                </h2>
+                        <div className="lg:pl-8">
+                            {/* Products List */}
+                            <div className="space-y-4 mb-6">
+                                {cartItems.map((item) => {
+                                    const product = item.product;
+                                    const productImage = product?.images?.[0] || product?.image;
+                                    const productName = product?.name || 'Product';
+                                    const productPrice = item.price || product?.price || 0;
+                                    const size = item.size || 'One Size';
 
-                                {/* Cart Items */}
-                                <div className="space-y-4 mb-6 max-h-60 overflow-y-auto">
-                                    {cartItems.map((item) => (
-                                        <div key={`${item.product.id}-${item.size}`} className="flex gap-3">
-                                            <div className="relative">
-                                                <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
-                                                    {item.product.image ? (
-                                                        <img
-                                                            src={item.product.image}
-                                                            alt={item.product.name}
-                                                            className="w-full h-full object-cover rounded"
-                                                        />
-                                                    ) : (
-                                                        <div className="w-full h-full bg-gray-200 rounded"></div>
-                                                    )}
-                                                </div>
-                                                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                    return (
+                                        <div key={item._id || item.id} className="flex gap-4">
+                                            <div className="relative w-20 h-20 flex-shrink-0 bg-gray-100 rounded">
+                                                {productImage ? (
+                                                    <img
+                                                        src={productImage}
+                                                        alt={productName}
+                                                        className="w-full h-full object-cover rounded"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full bg-gray-200 rounded"></div>
+                                                )}
+                                                <span className="absolute -top-2 -right-2 bg-gray-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
                                                     {item.quantity}
                                                 </span>
                                             </div>
                                             <div className="flex-1">
-                                                <h3 className="text-sm font-medium text-gray-900 line-clamp-2 mb-1">
-                                                    {item.product.name}
-                                                </h3>
-                                                <p className="text-xs text-gray-600">{item.size}</p>
+                                                <h3 className="font-medium text-sm mb-1">{productName}</h3>
+                                                <p className="text-xs text-gray-500">Size: {size}</p>
                                             </div>
-                                            <div className="text-sm font-semibold text-gray-900 whitespace-nowrap">
-                                                {formatPrice(item.product.price * item.quantity)}
+                                            <div className="text-right">
+                                                <p className="font-medium">{formatPrice(productPrice * item.quantity)}</p>
                                             </div>
                                         </div>
-                                    ))}
+                                    );
+                                })}
+                            </div>
+
+                            {/* Summary */}
+                            <div className="border-t border-gray-200 pt-4 space-y-3">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Tạm tính</span>
+                                    <span className="font-medium">{formatPrice(subtotal)}</span>
                                 </div>
-
-                                {/* Coupon Code */}
-                                <div className="mb-6">
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Nhập mã giảm giá"
-                                            value={couponCode}
-                                            onChange={(e) => setCouponCode(e.target.value)}
-                                            className="flex-1 px-4 py-2 border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={handleApplyCoupon}
-                                            className="bg-blue-600 text-white px-6 py-2 text-sm font-medium hover:bg-blue-700 transition-colors"
-                                        >
-                                            Áp dụng
-                                        </button>
-                                    </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-600">Vận chuyển</span>
+                                    <span className="font-medium">Miễn phí</span>
                                 </div>
-
-                                {/* Price Summary */}
-                                <div className="space-y-3 py-4 border-t border-gray-200">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">Tạm tính</span>
-                                        <span className="font-medium text-gray-900">{formatPrice(subtotal)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-gray-600">Phí vận chuyển</span>
-                                        <span className="font-medium text-gray-900">
-                                            {shippingFee === 0 ? '-' : formatPrice(shippingFee)}
-                                        </span>
-                                    </div>
-                                    {discount > 0 && (
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-gray-600">Giảm giá</span>
-                                            <span className="font-medium text-red-600">-{formatPrice(discount)}</span>
-                                        </div>
-                                    )}
+                                <div className="border-t border-gray-200 pt-3 flex justify-between">
+                                    <span className="font-bold text-lg">TỔNG CỘNG</span>
+                                    <span className="font-bold text-lg">{formatPrice(total)}</span>
                                 </div>
-
-                                {/* Total */}
-                                <div className="flex justify-between items-center py-4 border-t border-gray-200 mb-6">
-                                    <span className="text-lg font-medium text-gray-900">Tổng cộng</span>
-                                    <span className="text-2xl font-bold text-blue-600">{formatPrice(total)}</span>
-                                </div>
-
-                                {/* Back to Cart Link */}
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/cart')}
-                                    className="text-blue-600 hover:underline text-sm mb-4 flex items-center gap-1"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M15 19l-7-7 7-7"
-                                        />
-                                    </svg>
-                                    Quay về giỏ hàng
-                                </button>
-
-                                {/* Place Order Button */}
-                                <button
-                                    type="submit"
-                                    className="w-full bg-blue-600 text-white py-4 px-6 font-bold text-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    ĐẶT HÀNG
-                                </button>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
+
+            <Footer />
         </div>
     );
 }
