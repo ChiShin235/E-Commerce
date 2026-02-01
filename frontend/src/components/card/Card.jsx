@@ -4,6 +4,7 @@ import { ShoppingBag, Heart } from 'lucide-react';
 import { productAPI } from '../../services/api';
 import QuickViewModal from '../QuickViewModal';
 import VanillaTilt from 'vanilla-tilt';
+import Pagination from '../pagination/Pagination';
 
 export default function Card() {
     const navigate = useNavigate();
@@ -13,6 +14,10 @@ export default function Card() {
     const [favorites, setFavorites] = useState(new Set());
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const cardRefs = useRef([]);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const productsPerPage = 8;
 
     useEffect(() => {
         fetchProducts();
@@ -48,7 +53,7 @@ export default function Card() {
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const data = await productAPI.getAll({ limit: 8 });
+            const data = await productAPI.getAll();
             setProducts(data.data || data);
             setError(null);
         } catch (err) {
@@ -78,6 +83,16 @@ export default function Card() {
         }).format(price);
     };
 
+    // Pagination logic
+    const totalPages = Math.ceil(products.length / productsPerPage);
+    const indexOfLastProduct = currentPage * productsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    const currentProducts = products.slice(indexOfFirstProduct, indexOfLastProduct);
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
     if (loading) {
         return (
             <div className="flex justify-center items-center h-96">
@@ -92,7 +107,7 @@ export default function Card() {
 
                 {/* Products Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {products.map((product, index) => {
+                    {currentProducts.map((product, index) => {
                         const productId = product._id || product.id;
                         const productImage = product.images?.[0] || product.image;
                         return (
@@ -198,6 +213,13 @@ export default function Card() {
                         );
                     })}
                 </div>
+
+                {/* Pagination */}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
 
                 {/* Error Message */}
                 {error && (

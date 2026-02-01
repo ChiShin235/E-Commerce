@@ -30,7 +30,7 @@ export default function Homepage() {
       </section>
 
       {/* Newsletter Section */}
-      <section className="py-16 bg-black text-white">
+      {/* <section className="py-16 bg-black text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h3 className="text-3xl md:text-4xl font-bold mb-4">
             Subscribe to Our Newsletter
@@ -58,17 +58,16 @@ export default function Homepage() {
             We respect your privacy. Unsubscribe at any time.
           </p>
         </div>
-      </section>
+      </section> */}
 
       {/* Categories Section */}
-      <section className="py-16 bg-white">
+      {/* <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-4xl font-bold text-center mb-12 text-gray-900">
             Shop By Category
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Category 1 */}
             <div className="group relative h-64 rounded-lg overflow-hidden cursor-pointer bg-gradient-to-br from-amber-400 to-amber-600">
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
                 <div className="text-center">
@@ -80,7 +79,6 @@ export default function Homepage() {
               </div>
             </div>
 
-            {/* Category 2 */}
             <div className="group relative h-64 rounded-lg overflow-hidden cursor-pointer bg-gradient-to-br from-red-400 to-red-600">
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
                 <div className="text-center">
@@ -92,7 +90,6 @@ export default function Homepage() {
               </div>
             </div>
 
-            {/* Category 3 */}
             <div className="group relative h-64 rounded-lg overflow-hidden cursor-pointer bg-gradient-to-br from-blue-400 to-blue-600">
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
                 <div className="text-center">
@@ -105,7 +102,7 @@ export default function Homepage() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Promotional Banner */}
       {/* <section className="py-12 bg-gradient-to-r from-gray-900 to-black text-white">

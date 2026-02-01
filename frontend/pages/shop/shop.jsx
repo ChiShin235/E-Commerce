@@ -6,6 +6,7 @@ import { productAPI, categoryAPI } from '../../src/services/api';
 import Header from '../../src/components/header/Header';
 import Footer from '../../src/components/footer/Footer';
 import QuickViewModal from '../../src/components/QuickViewModal';
+import Pagination from '../../src/components/pagination/Pagination';
 
 export default function Shop() {
     const navigate = useNavigate();
@@ -17,6 +18,10 @@ export default function Shop() {
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const cardRefs = useRef([]);
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const productsPerPage = 8;
 
     // Filter states
     const [filters, setFilters] = useState({
@@ -126,6 +131,7 @@ export default function Shop() {
             ...prev,
             [filterName]: value,
         }));
+        setCurrentPage(1); // Reset về trang 1 khi thay đổi filter
     };
 
     // Get unique sizes from all products
@@ -201,6 +207,16 @@ export default function Shop() {
         }
     });
 
+    // Pagination logic
+    const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
+    const indexOfLastProduct = currentPage * productsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
     return (
         <div className="bg-white min-h-screen">
             <Header />
@@ -226,7 +242,9 @@ export default function Shop() {
                                 Search: {searchQuery} - {sortedProducts.length} products
                             </p>
                         ) : (
-                            <p className="text-lg text-gray-200">Discover Our Latest Collections</p>
+                            <p className="text-lg text-gray-200">
+                                Discover Our Latest Collections - {sortedProducts.length} products
+                            </p>
                         )}
                     </div>
                 </div>
@@ -400,19 +418,20 @@ export default function Shop() {
                         <div className="text-lg text-gray-600">Loading products...</div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {sortedProducts.map((product, index) => {
-                            const productId = product._id || product.id;
-                            const productImage = product.images?.[0] || product.image;
-                            return (
-                                <div
-                                    key={productId}
-                                    ref={(el) => (cardRefs.current[index] = el)}
-                                    className="group transform-gpu transition-all duration-300"
-                                    style={{ transformStyle: 'preserve-3d' }}
-                                >
-                                    {/* Collab Label and Heart */}
-                                    {/* <div className="mb-4 flex justify-between items-start" style={{ transform: 'translateZ(20px)' }}>
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                            {currentProducts.map((product, index) => {
+                                const productId = product._id || product.id;
+                                const productImage = product.images?.[0] || product.image;
+                                return (
+                                    <div
+                                        key={productId}
+                                        ref={(el) => (cardRefs.current[index] = el)}
+                                        className="group transform-gpu transition-all duration-300"
+                                        style={{ transformStyle: 'preserve-3d' }}
+                                    >
+                                        {/* Collab Label and Heart */}
+                                        {/* <div className="mb-4 flex justify-between items-start" style={{ transform: 'translateZ(20px)' }}>
                                         <span className="bg-black text-white text-xs font-bold px-3 py-1 shadow-lg">
                                             Collab
                                         </span>
@@ -431,75 +450,83 @@ export default function Shop() {
                                         </button>
                                     </div> */}
 
-                                    {/* Product Image */}
-                                    <div
-                                        onClick={() => navigate(`/product/${productId}`)}
-                                        className="relative bg-gray-100 rounded-lg overflow-hidden mb-4 h-80 flex items-center justify-center group cursor-pointer shadow-xl"
-                                        style={{ transform: 'translateZ(40px)' }}
-                                    >
-                                        {productImage ? (
-                                            <img
-                                                src={productImage}
-                                                alt={product.name}
-                                                className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-700 ease-out"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300"></div>
-                                        )}
+                                        {/* Product Image */}
+                                        <div
+                                            onClick={() => navigate(`/product/${productId}`)}
+                                            className="relative bg-gray-100 rounded-lg overflow-hidden mb-4 h-80 flex items-center justify-center group cursor-pointer shadow-xl"
+                                            style={{ transform: 'translateZ(40px)' }}
+                                        >
+                                            {productImage ? (
+                                                <img
+                                                    src={productImage}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-700 ease-out"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300"></div>
+                                            )}
 
-                                        {/* Hover Overlay */}
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                                            <div className="flex flex-col gap-3 px-4">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/product/${productId}`);
-                                                    }}
-                                                    className="bg-white text-black font-bold px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm"
-                                                >
-                                                    View Detail
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setQuickViewProduct(product);
-                                                    }}
-                                                    className="bg-black text-white border-2 border-white font-bold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm"
-                                                >
-                                                    Quick View
-                                                </button>
+                                            {/* Hover Overlay */}
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                                <div className="flex flex-col gap-3 px-4">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/product/${productId}`);
+                                                        }}
+                                                        className="bg-white text-black font-bold px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                                                    >
+                                                        View Detail
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setQuickViewProduct(product);
+                                                        }}
+                                                        className="bg-black text-white border-2 border-white font-bold px-6 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm"
+                                                    >
+                                                        Quick View
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Product Info */}
-                                    <h3
-                                        onClick={() => navigate(`/product/${productId}`)}
-                                        className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 cursor-pointer transition-colors"
-                                        style={{ transform: 'translateZ(25px)' }}
-                                    >
-                                        {product.name}
-                                    </h3>
+                                        {/* Product Info */}
+                                        <h3
+                                            onClick={() => navigate(`/product/${productId}`)}
+                                            className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-blue-600 cursor-pointer transition-colors"
+                                            style={{ transform: 'translateZ(25px)' }}
+                                        >
+                                            {product.name}
+                                        </h3>
 
-                                    <div className="flex items-center gap-2" style={{ transform: 'translateZ(25px)' }}>
-                                        <p className="text-lg font-bold text-gray-900">
-                                            {formatPrice(product.price)}
-                                        </p>
-                                        {product.originalPrice && product.originalPrice > product.price && (
-                                            <p className="text-sm text-gray-500 line-through">
-                                                {formatPrice(product.originalPrice)}
+                                        <div className="flex items-center gap-2" style={{ transform: 'translateZ(25px)' }}>
+                                            <p className="text-lg font-bold text-gray-900">
+                                                {formatPrice(product.price)}
                                             </p>
+                                            {product.originalPrice && product.originalPrice > product.price && (
+                                                <p className="text-sm text-gray-500 line-through">
+                                                    {formatPrice(product.originalPrice)}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Stock Status */}
+                                        {product.stock <= 0 && (
+                                            <p className="text-red-600 text-sm font-semibold mt-2">Hết hàng</p>
                                         )}
                                     </div>
+                                );
+                            })}
+                        </div>
 
-                                    {/* Stock Status */}
-                                    {product.stock <= 0 && (
-                                        <p className="text-red-600 text-sm font-semibold mt-2">Hết hàng</p>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                        {/* Pagination */}
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
+                    </>
                 )}
 
                 {/* No Products */}
