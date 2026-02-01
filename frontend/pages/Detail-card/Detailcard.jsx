@@ -42,6 +42,19 @@ export default function Detailcard() {
         }).format(price);
     };
 
+    const normalizeSizes = (sizeField) => {
+        if (!sizeField) return [];
+        if (Array.isArray(sizeField)) {
+            return sizeField
+                .map((s) => (typeof s === 'string' ? s.trim() : ''))
+                .filter((s) => s);
+        }
+        if (typeof sizeField === 'string') {
+            return sizeField.split(/[,\s]+/).map((s) => s.trim()).filter((s) => s);
+        }
+        return [];
+    };
+
     const handleAddToCart = (e) => {
         e?.stopPropagation();
 
@@ -163,13 +176,13 @@ export default function Detailcard() {
                         </div>
 
                         {/* Size Selection */}
-                        {product.size && (
+                        {normalizeSizes(product.size).length > 0 && (
                             <div className="mb-6">
                                 <h3 className="text-sm font-medium text-gray-900 mb-3">
                                     Choose size <span className="text-red-600">*</span>
                                 </h3>
                                 <div className="grid grid-cols-5 gap-3">
-                                    {product.size.split(/[,\s]+/).filter(s => s.trim()).map((size) => (
+                                    {normalizeSizes(product.size).map((size) => (
                                         <button
                                             key={size}
                                             onClick={() => setSelectedSize(selectedSize === size ? '' : size)}

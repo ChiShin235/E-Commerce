@@ -108,6 +108,19 @@ export default function Shop() {
         }).format(price);
     };
 
+    const normalizeSizes = (sizeField) => {
+        if (!sizeField) return [];
+        if (Array.isArray(sizeField)) {
+            return sizeField
+                .map((s) => (typeof s === 'string' ? s.trim() : ''))
+                .filter((s) => s);
+        }
+        if (typeof sizeField === 'string') {
+            return sizeField.split(/[,\s]+/).map((s) => s.trim()).filter((s) => s);
+        }
+        return [];
+    };
+
     const handleFilterChange = (filterName, value) => {
         setFilters((prev) => ({
             ...prev,
@@ -119,7 +132,7 @@ export default function Shop() {
     const availableSizes = [...new Set(
         products
             .filter(p => p.size)
-            .flatMap(p => p.size.split(/[,\s]+/).map(s => s.trim()))
+            .flatMap(p => normalizeSizes(p.size))
             .filter(s => s)
     )].sort();
 
@@ -159,8 +172,8 @@ export default function Shop() {
 
         // Size filter
         if (filters.size !== 'all') {
-            if (!product.size) return false;
-            const sizes = product.size.split(/[,\s]+/).map(s => s.toLowerCase().trim());
+            const sizes = normalizeSizes(product.size).map((s) => s.toLowerCase());
+            if (sizes.length === 0) return false;
             if (!sizes.includes(filters.size.toLowerCase())) return false;
         }
 

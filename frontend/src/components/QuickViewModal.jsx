@@ -15,10 +15,20 @@ export default function QuickViewModal({ product, isOpen, onClose }) {
     const productId = product._id || product.id;
     const productImage = product.images?.[0] || product.image;
 
-    // Parse sizes from product.size field (can be "XS,S,M,L,XL" or "XS S M L XL")
-    const availableSizes = product.size
-        ? product.size.split(/[,\s]+/).filter(s => s.trim())
-        : [];
+    const normalizeSizes = (sizeField) => {
+        if (!sizeField) return [];
+        if (Array.isArray(sizeField)) {
+            return sizeField
+                .map((s) => (typeof s === 'string' ? s.trim() : ''))
+                .filter((s) => s);
+        }
+        if (typeof sizeField === 'string') {
+            return sizeField.split(/[,\s]+/).map((s) => s.trim()).filter((s) => s);
+        }
+        return [];
+    };
+
+    const availableSizes = normalizeSizes(product.size);
 
     const isInStock = product.stock > 0;
 
