@@ -163,9 +163,14 @@ const UserManagement = () => {
         });
     };
 
-    const getRoleNames = (userRoles) => {
-        if (!userRoles || userRoles.length === 0) return 'User';
-        return userRoles.map(r => r.name).join(', ');
+    const getRoleNames = (userRoles, fallbackRole) => {
+        if (userRoles && userRoles.length > 0) {
+            return userRoles.map(r => r.name).join(', ');
+        }
+        if (fallbackRole) {
+            return fallbackRole.charAt(0).toUpperCase() + fallbackRole.slice(1);
+        }
+        return 'User';
     };
 
     return (
@@ -288,7 +293,7 @@ const UserManagement = () => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                                                        {getRoleNames(user.roles)}
+                                                        {getRoleNames(user.roles, user.role)}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
