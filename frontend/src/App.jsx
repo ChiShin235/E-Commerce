@@ -25,6 +25,7 @@ import ManagerDashboard from '../pages/manager/ManagerDashboard';
 import ManagerOrders from '../pages/manager/ManagerOrders';
 import ManagerProducts from '../pages/manager/ManagerProducts';
 import ManagerReports from '../pages/manager/ManagerReports';
+import ManagerCategories from '../pages/manager/ManagerCategories';
 
 function App() {
   return (
@@ -92,6 +93,11 @@ function App() {
             <Route path="/manager/products" element={
               <ManagerRoute>
                 <ManagerProducts />
+              </ManagerRoute>
+            } />
+            <Route path="/manager/categories" element={
+              <ManagerRoute>
+                <ManagerCategories />
               </ManagerRoute>
             } />
             <Route path="/manager/reports" element={

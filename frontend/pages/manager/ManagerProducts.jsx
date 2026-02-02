@@ -298,6 +298,12 @@ export default function ManagerProducts() {
                         <i className="fas fa-box mr-3"></i> Products
                     </button>
                     <button
+                        onClick={() => navigate('/manager/categories')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
+                    >
+                        <i className="fas fa-tags mr-3"></i> Categories
+                    </button>
+                    <button
                         onClick={() => navigate('/manager/reports')}
                         className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
                     >

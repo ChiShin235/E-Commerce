@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Role from "../models/Role.js";
 
 export const requireAdmin = async (req, res, next) => {
   try {
@@ -9,7 +10,7 @@ export const requireAdmin = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(req.userId).populate("roles");
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -17,10 +18,7 @@ export const requireAdmin = async (req, res, next) => {
       });
     }
 
-    const hasAdminRole =
-      user.role === "admin" ||
-      (user.roles || []).some((role) => role.name === "admin");
-    if (!hasAdminRole) {
+    if (user.role !== "admin") {
       return res.status(403).json({
         success: false,
         message: "Admin access required",
@@ -47,7 +45,7 @@ export const requireManager = async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(req.userId).populate("roles");
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -55,10 +53,7 @@ export const requireManager = async (req, res, next) => {
       });
     }
 
-    const hasManagerRole =
-      user.role === "manager" ||
-      (user.roles || []).some((role) => role.name === "manager");
-    if (!hasManagerRole) {
+    if (user.role !== "manager") {
       return res.status(403).json({
         success: false,
         message: "Manager access required",
@@ -76,6 +71,41 @@ export const requireManager = async (req, res, next) => {
   }
 };
 
+export const requireManagerOrAdmin = async (req, res, next) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.role !== "admin" && user.role !== "manager") {
+      return res.status(403).json({
+        success: false,
+        message: "Manager or admin access required",
+      });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("Error in requireManagerOrAdmin:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while checking manager/admin role",
+    });
+  }
+};
+
 export const requirePermission = (permissionKey) => async (req, res, next) => {
   try {
     if (!req.userId) {
@@ -85,10 +115,7 @@ export const requirePermission = (permissionKey) => async (req, res, next) => {
       });
     }
 
-    const user = await User.findById(req.userId).populate({
-      path: "roles",
-      populate: { path: "permissions" },
-    });
+    const user = await User.findById(req.userId);
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -96,24 +123,26 @@ export const requirePermission = (permissionKey) => async (req, res, next) => {
       });
     }
 
-    const hasAdminRole =
-      user.role === "admin" ||
-      (user.roles || []).some((role) => role.name === "admin");
-    if (hasAdminRole) {
+    if (user.role === "admin") {
       req.user = user;
       return next();
     }
 
-    const permissionSet = new Set();
-    (user.roles || []).forEach((role) => {
-      (role.permissions || []).forEach((permission) => {
-        if (permission?.key) {
-          permissionSet.add(permission.key);
-        }
+    if (!user.role) {
+      return res.status(403).json({
+        success: false,
+        message: "Role not assigned",
       });
-    });
+    }
 
-    if (!permissionSet.has(permissionKey)) {
+    const roleByName = await Role.findOne({ name: user.role }).populate(
+      "permissions",
+    );
+    const hasPermission = (roleByName?.permissions || []).some(
+      (permission) => permission?.key === permissionKey,
+    );
+
+    if (!hasPermission) {
       return res.status(403).json({
         success: false,
         message: "Permission denied",
@@ -121,7 +150,6 @@ export const requirePermission = (permissionKey) => async (req, res, next) => {
     }
 
     req.user = user;
-    req.permissions = Array.from(permissionSet);
     next();
   } catch (error) {
     console.error("Error in requirePermission:", error);
