@@ -22,6 +22,9 @@ import OrderManagement from '../pages/admin/OrderManagement';
 import CategoryManagement from '../pages/admin/CategoryManagement';
 import ReportsAnalytics from '../pages/admin/ReportsAnalytics';
 import ManagerDashboard from '../pages/manager/ManagerDashboard';
+import ManagerOrders from '../pages/manager/ManagerOrders';
+import ManagerProducts from '../pages/manager/ManagerProducts';
+import ManagerReports from '../pages/manager/ManagerReports';
 
 function App() {
   return (
@@ -79,6 +82,21 @@ function App() {
             <Route path="/manager/dashboard" element={
               <ManagerRoute>
                 <ManagerDashboard />
+              </ManagerRoute>
+            } />
+            <Route path="/manager/orders" element={
+              <ManagerRoute>
+                <ManagerOrders />
+              </ManagerRoute>
+            } />
+            <Route path="/manager/products" element={
+              <ManagerRoute>
+                <ManagerProducts />
+              </ManagerRoute>
+            } />
+            <Route path="/manager/reports" element={
+              <ManagerRoute>
+                <ManagerReports />
               </ManagerRoute>
             } />
             <Route path="/login" element={<AuthPage />} />

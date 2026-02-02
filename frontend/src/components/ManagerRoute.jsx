@@ -16,9 +16,9 @@ export default function ManagerRoute({ children }) {
         return <Navigate to="/login" replace />;
     }
 
-    // Check if user has manager or admin role
-    const isManager = user?.roles?.some(role => ['manager', 'admin'].includes(role.name)) ||
-        ['manager', 'admin'].includes(user?.role);
+    // Check if user has ONLY manager role (not admin)
+    const isManager = user?.roles?.some(role => role.name === 'manager') ||
+        user?.role === 'manager';
 
     if (!isManager) {
         return <Navigate to="/" replace />;

@@ -186,6 +186,59 @@ export const statsAPI = {
   },
 };
 
+export const managerAPI = {
+  getStats: async () => {
+    const response = await api.get("/manager/stats");
+    return response.data;
+  },
+  getOrders: async (params = {}) => {
+    const response = await api.get("/manager/orders", { params });
+    return response.data;
+  },
+  getProducts: async (params = {}) => {
+    const response = await api.get("/manager/products", { params });
+    return response.data;
+  },
+  createProduct: async (productData) => {
+    const response = await api.post("/manager/products", productData);
+    return response.data;
+  },
+  updateProduct: async (id, productData) => {
+    const response = await api.put(`/manager/products/${id}`, productData);
+    return response.data;
+  },
+  deleteProduct: async (id) => {
+    const response = await api.delete(`/manager/products/${id}`);
+    return response.data;
+  },
+  // Manager Reports
+  getSales: async (startDate, endDate) => {
+    const params = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const response = await api.get("/manager/reports/sales", { params });
+    return response.data;
+  },
+  getTopProducts: async (limit = 10) => {
+    const response = await api.get("/manager/reports/top-products", {
+      params: { limit },
+    });
+    return response.data;
+  },
+  getRevenueByCategory: async () => {
+    const response = await api.get("/manager/reports/revenue-by-category");
+    return response.data;
+  },
+  getCustomerStats: async () => {
+    const response = await api.get("/manager/reports/customers");
+    return response.data;
+  },
+  getInventory: async () => {
+    const response = await api.get("/manager/reports/inventory");
+    return response.data;
+  },
+};
+
 export const reportAPI = {
   getSales: async (startDate, endDate) => {
     const params = {};

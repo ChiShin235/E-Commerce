@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../src/context/AuthContext';
-import { statsAPI } from '../../src/services/api';
+import { managerAPI } from '../../src/services/api';
 import { toast } from 'sonner';
-import { Line, Bar } from 'react-chartjs-2';
+import { Line, Doughnut } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     CategoryScale,
     LinearScale,
     PointElement,
     LineElement,
-    BarElement,
+    ArcElement,
     Title,
     Tooltip,
     Legend,
@@ -23,7 +23,7 @@ ChartJS.register(
     LinearScale,
     PointElement,
     LineElement,
-    BarElement,
+    ArcElement,
     Title,
     Tooltip,
     Legend,
@@ -44,7 +44,7 @@ export default function ManagerDashboard() {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            const response = await statsAPI.getDashboard();
+            const response = await managerAPI.getStats();
             setDashboardData(response.data);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -68,7 +68,7 @@ export default function ManagerDashboard() {
     };
 
     const getMonthName = (month) => {
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const months = ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'];
         return months[month - 1];
     };
 
@@ -85,11 +85,11 @@ export default function ManagerDashboard() {
 
     const getStatusText = (status) => {
         const statusMap = {
-            'pending': 'Pending',
-            'paid': 'Paid',
-            'shipped': 'Shipped',
-            'completed': 'Completed',
-            'cancelled': 'Cancelled'
+            'pending': 'Chờ xử lý',
+            'paid': 'Đã thanh toán',
+            'shipped': 'Đang giao',
+            'completed': 'Hoàn thành',
+            'cancelled': 'Đã hủy'
         };
         return statusMap[status] || status;
     };
@@ -118,74 +118,24 @@ export default function ManagerDashboard() {
         {
             title: 'Total Revenue',
             value: formatPrice(dashboardData.totalRevenue),
-            color: 'text-green-600',
-            icon: 'fa-dollar-sign',
-            bgColor: 'bg-green-50'
+            color: 'text-green-600'
+        },
+        {
+            title: 'New Orders (30 days)',
+            value: dashboardData.newOrdersCount.toString(),
+            color: 'text-blue-600'
         },
         {
             title: 'Total Orders',
             value: dashboardData.totalOrders.toString(),
-            color: 'text-orange-600',
-            icon: 'fa-shopping-cart',
-            bgColor: 'bg-orange-50'
+            color: 'text-orange-600'
         },
         {
-            title: 'Total Products',
-            value: dashboardData.totalProducts.toString(),
-            color: 'text-indigo-600',
-            icon: 'fa-box',
-            bgColor: 'bg-indigo-50'
-        },
-        {
-            title: 'New Users (30 days)',
-            value: dashboardData.newUsersCount.toString(),
-            color: 'text-blue-600',
-            icon: 'fa-users',
-            bgColor: 'bg-blue-50'
+            title: 'Pending Orders',
+            value: dashboardData.pendingOrders.toString(),
+            color: 'text-yellow-600'
         }
     ] : [];
-
-    if (loading || !dashboardData) {
-        return (
-            <div className="flex h-screen overflow-hidden bg-gray-100">
-                {/* Sidebar */}
-                <aside className={`w-64 bg-teal-900 text-white flex-shrink-0 flex-col ${isSidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
-                    <div className="p-6 border-b border-teal-800 flex items-center justify-center">
-                        <img
-                            src="/picture/logo.png"
-                            alt="Logo"
-                            className="h-16 w-16 object-cover rounded-full"
-                        />
-                    </div>
-                    <nav className="flex-1 mt-4">
-                        <button className="w-full flex items-center px-6 py-3 bg-teal-800 border-l-4 border-teal-400 text-left">
-                            <i className="fas fa-chart-line mr-3"></i> Dashboard
-                        </button>
-                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left">
-                            <i className="fas fa-box mr-3"></i> Products
-                        </button>
-                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left">
-                            <i className="fas fa-tags mr-3"></i> Categories
-                        </button>
-                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left">
-                            <i className="fas fa-shopping-cart mr-3"></i> Orders
-                        </button>
-                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left">
-                            <i className="fas fa-home mr-3"></i> Home
-                        </button>
-                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left mt-4 border-t border-teal-800">
-                            <i className="fas fa-sign-out-alt mr-3"></i> Logout
-                        </button>
-                    </nav>
-                </aside>
-
-                {/* Main Content with Loading */}
-                <main className="flex-1 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
-                </main>
-            </div>
-        );
-    }
 
     // Revenue Chart Data
     const revenueData = {
@@ -217,85 +167,127 @@ export default function ManagerDashboard() {
         },
     };
 
-    // Orders Bar Chart Data
-    const ordersData = {
+    // Traffic Chart Data (Orders by Status)
+    const trafficData = {
         labels: statusLabels,
         datasets: [
             {
-                label: 'Orders',
                 data: statusValues,
                 backgroundColor: statusColors,
-                borderRadius: 8,
+                hoverOffset: 4,
             },
         ],
     };
 
-    const ordersOptions = {
+    const trafficOptions = {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
             legend: {
-                display: false,
-            },
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
+                position: 'bottom',
             },
         },
     };
 
-    return (
-        <div className="flex h-screen overflow-hidden bg-gray-100">
-            {/* Sidebar */}
-            <aside className={`w-64 bg-teal-900 text-white flex-shrink-0 flex-col ${isSidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
-                <div className="p-6 border-b border-teal-800">
-                    <div className="flex items-center justify-center mb-4">
+    if (loading || !dashboardData) {
+        return (
+            <div className="flex h-screen overflow-hidden bg-gray-100">
+                {/* Sidebar */}
+                <aside className={`w-64 bg-teal-800 text-white flex-shrink-0 flex-col ${isSidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
+                    <div className="p-6 border-b border-teal-700 flex items-center justify-center">
                         <img
                             src="/picture/logo.png"
                             alt="Logo"
                             className="h-16 w-16 object-cover rounded-full"
                         />
                     </div>
-                    <div className="text-center">
-                        <p className="text-sm text-teal-300">Manager Panel</p>
-                        <p className="text-xs text-teal-400 mt-1">{user?.username || 'Manager'}</p>
-                    </div>
+                    <nav className="flex-1 mt-4">
+                        <button
+                            onClick={() => navigate('/manager/dashboard')}
+                            className="w-full flex items-center px-6 py-3 bg-teal-700 border-l-4 border-teal-400 text-left"
+                        >
+                            <i className="fas fa-chart-line mr-3"></i> Dashboard
+                        </button>
+                        <button
+                            onClick={() => navigate('/manager/orders')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
+                        >
+                            <i className="fas fa-shopping-cart mr-3"></i> Orders
+                        </button>
+                        <button
+                            onClick={() => navigate('/manager/products')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
+                        >
+                            <i className="fas fa-box mr-3"></i> Products
+                        </button>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
+                        >
+                            <i className="fas fa-home mr-3"></i> Home
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left mt-4 border-t border-teal-700"
+                        >
+                            <i className="fas fa-sign-out-alt mr-3"></i> Logout
+                        </button>
+                    </nav>
+                </aside>
+
+                {/* Main Content with Loading */}
+                <main className="flex-1 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+                </main>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex h-screen overflow-hidden bg-gray-100">
+            {/* Sidebar */}
+            <aside className={`w-64 bg-teal-800 text-white flex-shrink-0 flex-col ${isSidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
+                <div className="p-6 border-b border-teal-700 flex items-center justify-center">
+                    <img
+                        src="/picture/logo.png"
+                        alt="Logo"
+                        className="h-16 w-16 object-cover rounded-full"
+                    />
                 </div>
                 <nav className="flex-1 mt-4">
                     <button
                         onClick={() => navigate('/manager/dashboard')}
-                        className="w-full flex items-center px-6 py-3 bg-teal-800 border-l-4 border-teal-400 text-left"
+                        className="w-full flex items-center px-6 py-3 bg-teal-700 border-l-4 border-teal-400 text-left"
                     >
                         <i className="fas fa-chart-line mr-3"></i> Dashboard
                     </button>
                     <button
-                        onClick={() => navigate('/admin/products')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left"
-                    >
-                        <i className="fas fa-box mr-3"></i> Products
-                    </button>
-                    <button
-                        onClick={() => navigate('/admin/categories')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left"
-                    >
-                        <i className="fas fa-tags mr-3"></i> Categories
-                    </button>
-                    <button
-                        onClick={() => navigate('/admin/orders')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left"
+                        onClick={() => navigate('/manager/orders')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
                     >
                         <i className="fas fa-shopping-cart mr-3"></i> Orders
                     </button>
                     <button
+                        onClick={() => navigate('/manager/products')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
+                    >
+                        <i className="fas fa-box mr-3"></i> Products
+                    </button>
+                    <button
+                        onClick={() => navigate('/manager/reports')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
+                    >
+                        <i className="fas fa-chart-bar mr-3"></i> Reports
+                    </button>
+                    <button
                         onClick={() => navigate('/')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left"
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
                     >
                         <i className="fas fa-home mr-3"></i> Home
                     </button>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left mt-4 border-t border-teal-800"
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left mt-4 border-t border-teal-700"
                     >
                         <i className="fas fa-sign-out-alt mr-3"></i> Logout
                     </button>
@@ -321,10 +313,7 @@ export default function ManagerDashboard() {
                         >
                             <i className="fas fa-bars text-xl"></i>
                         </button>
-                        <div>
-                            <h2 className="text-lg md:text-xl font-semibold text-gray-800">Manager Dashboard</h2>
-                            <p className="text-xs text-gray-500">Welcome back, {user?.name || user?.username}</p>
-                        </div>
+                        <h2 className="text-lg md:text-xl font-semibold text-gray-800">Manager Dashboard</h2>
                     </div>
                     <div className="flex items-center space-x-4">
                         <button className="text-gray-500 hover:text-teal-600">
@@ -341,16 +330,9 @@ export default function ManagerDashboard() {
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
                         {stats.map((stat, index) => (
-                            <div key={index} className={`${stat.bgColor} p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow`}>
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-gray-600 text-sm font-medium">{stat.title}</p>
-                                        <h3 className={`text-2xl font-bold mt-2 ${stat.color}`}>{stat.value}</h3>
-                                    </div>
-                                    <div className={`w-12 h-12 rounded-full ${stat.bgColor} flex items-center justify-center`}>
-                                        <i className={`fas ${stat.icon} text-xl ${stat.color}`}></i>
-                                    </div>
-                                </div>
+                            <div key={index} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                                <p className="text-gray-500 text-sm">{stat.title}</p>
+                                <h3 className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.value}</h3>
                             </div>
                         ))}
                     </div>
@@ -359,36 +341,59 @@ export default function ManagerDashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8">
                         {/* Revenue Chart */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-gray-700">Revenue Trend</h3>
-                                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Last 6 Months</span>
-                            </div>
+                            <h3 className="font-bold text-gray-700 mb-4">Revenue Last 6 Months</h3>
                             <div className="h-64">
                                 <Line data={revenueData} options={revenueOptions} />
                             </div>
                         </div>
 
-                        {/* Orders Chart */}
+                        {/* Traffic Chart */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-bold text-gray-700">Orders by Status</h3>
-                                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Current</span>
-                            </div>
-                            <div className="h-64">
-                                <Bar data={ordersData} options={ordersOptions} />
+                            <h3 className="font-bold text-gray-700 mb-4">Orders by Status</h3>
+                            <div className="max-w-[300px] mx-auto h-64 flex items-center justify-center">
+                                <Doughnut data={trafficData} options={trafficOptions} />
                             </div>
                         </div>
                     </div>
 
-                    {/* Recent Orders Table */}
+                    {/* Top Products Section */}
+                    {dashboardData.topProducts && dashboardData.topProducts.length > 0 && (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+                            <div className="p-6 border-b border-gray-100">
+                                <h3 className="font-bold text-gray-700">Top Selling Products (30 days)</h3>
+                            </div>
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {dashboardData.topProducts.map((product, index) => (
+                                        <div key={product._id} className="bg-gray-50 rounded-lg p-4 flex items-center space-x-4 hover:shadow-md transition-shadow">
+                                            <div className="flex-shrink-0 w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                                                <span className="text-teal-700 font-bold text-lg">#{index + 1}</span>
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-semibold text-gray-800 line-clamp-1">{product.name}</h4>
+                                                <p className="text-sm text-gray-600">
+                                                    Sold: <span className="font-semibold text-teal-600">{product.totalQuantity}</span>
+                                                </p>
+                                                <p className="text-sm text-gray-600">
+                                                    Revenue: <span className="font-semibold">{formatPrice(product.totalRevenue)}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Orders Table */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                             <h3 className="font-bold text-gray-700">Recent Orders</h3>
                             <button
-                                onClick={() => navigate('/admin/orders')}
-                                className="text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center gap-2"
+                                onClick={() => navigate('/manager/orders')}
+                                className="text-teal-600 hover:text-teal-700 text-sm font-medium"
                             >
-                                View All <i className="fas fa-arrow-right text-xs"></i>
+                                View All
                             </button>
                         </div>
                         <div className="overflow-x-auto">
@@ -399,28 +404,20 @@ export default function ManagerDashboard() {
                                         <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Customer</th>
                                         <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Total</th>
                                         <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
-                                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {dashboardData.recentOrders.map((order) => (
-                                        <tr key={order._id} className="hover:bg-gray-50 transition">
+                                        <tr key={order._id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 text-sm font-medium text-teal-600">
                                                 #{order._id.slice(-8).toUpperCase()}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
-                                                {order.user?.username || order.email || 'N/A'}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                                                {formatPrice(order.totalAmount)}
-                                            </td>
+                                            <td className="px-6 py-4 text-sm">{order.user?.username || order.email || 'N/A'}</td>
+                                            <td className="px-6 py-4 text-sm font-semibold">{formatPrice(order.totalAmount)}</td>
                                             <td className="px-6 py-4 text-xs">
-                                                <span className={`${getStatusColor(order.status)} px-3 py-1 rounded-full font-medium`}>
+                                                <span className={`${getStatusColor(order.status)} px-2 py-1 rounded-full`}>
                                                     {getStatusText(order.status)}
                                                 </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500">
-                                                {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                                             </td>
                                         </tr>
                                     ))}

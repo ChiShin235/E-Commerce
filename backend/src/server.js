@@ -13,6 +13,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import vnpayRoutes from "./routes/vnpayRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import managerRoutes from "./routes/managerRoutes.js";
 import rolesRoutes from "./routes/rolesRoutes.js";
 import permissionsRoutes from "./routes/permissionsRoutes.js";
 import userRoleRoutes from "./routes/userRoleRoutes.js";
@@ -112,6 +113,7 @@ app.use("/api/payments", authenticateToken, requireAdmin, paymentRoutes);
 app.use("/api/vnpay", vnpayRoutes);
 app.use("/api/stats", authenticateToken, requireAdmin, statsRoutes);
 app.use("/api/reports", authenticateToken, requireAdmin, reportRoutes);
+app.use("/api/manager", managerRoutes);
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Middleware xá»­ lÃ½ lá»—i (pháº£i Ä‘áº·t sau táº¥t cáº£ routes)
