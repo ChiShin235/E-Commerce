@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../src/context/AuthContext';
 import { statsAPI } from '../../src/services/api';
 import { toast } from 'sonner';
-import { Line, Doughnut } from 'react-chartjs-2';
+import { Line, Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
     CategoryScale,
     LinearScale,
     PointElement,
     LineElement,
-    ArcElement,
+    BarElement,
     Title,
     Tooltip,
     Legend,
@@ -23,14 +23,14 @@ ChartJS.register(
     LinearScale,
     PointElement,
     LineElement,
-    ArcElement,
+    BarElement,
     Title,
     Tooltip,
     Legend,
     Filler
 );
 
-export default function AdminDashboard() {
+export default function ManagerDashboard() {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -118,22 +118,30 @@ export default function AdminDashboard() {
         {
             title: 'Total Revenue',
             value: formatPrice(dashboardData.totalRevenue),
-            color: 'text-green-600'
-        },
-        {
-            title: 'New Users (30 days)',
-            value: dashboardData.newUsersCount.toString(),
-            color: 'text-blue-600'
+            color: 'text-green-600',
+            icon: 'fa-dollar-sign',
+            bgColor: 'bg-green-50'
         },
         {
             title: 'Total Orders',
             value: dashboardData.totalOrders.toString(),
-            color: 'text-orange-600'
+            color: 'text-orange-600',
+            icon: 'fa-shopping-cart',
+            bgColor: 'bg-orange-50'
         },
         {
             title: 'Total Products',
             value: dashboardData.totalProducts.toString(),
-            color: 'text-indigo-600'
+            color: 'text-indigo-600',
+            icon: 'fa-box',
+            bgColor: 'bg-indigo-50'
+        },
+        {
+            title: 'New Users (30 days)',
+            value: dashboardData.newUsersCount.toString(),
+            color: 'text-blue-600',
+            icon: 'fa-users',
+            bgColor: 'bg-blue-50'
         }
     ] : [];
 
@@ -141,8 +149,8 @@ export default function AdminDashboard() {
         return (
             <div className="flex h-screen overflow-hidden bg-gray-100">
                 {/* Sidebar */}
-                <aside className={`w-64 bg-indigo-900 text-white flex-shrink-0 flex-col ${isSidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
-                    <div className="p-6 border-b border-indigo-800 flex items-center justify-center">
+                <aside className={`w-64 bg-teal-900 text-white flex-shrink-0 flex-col ${isSidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
+                    <div className="p-6 border-b border-teal-800 flex items-center justify-center">
                         <img
                             src="/picture/logo.png"
                             alt="Logo"
@@ -150,52 +158,22 @@ export default function AdminDashboard() {
                         />
                     </div>
                     <nav className="flex-1 mt-4">
-                        <button
-                            onClick={() => navigate('/admin/dashboard')}
-                            className="w-full flex items-center px-6 py-3 bg-indigo-800 border-l-4 border-blue-400 text-left"
-                        >
+                        <button className="w-full flex items-center px-6 py-3 bg-teal-800 border-l-4 border-teal-400 text-left">
                             <i className="fas fa-chart-line mr-3"></i> Dashboard
                         </button>
-                        <button
-                            onClick={() => navigate('/admin/users')}
-                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                        >
-                            <i className="fas fa-users mr-3"></i> Users
-                        </button>
-                        <button
-                            onClick={() => navigate('/admin/products')}
-                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                        >
+                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left">
                             <i className="fas fa-box mr-3"></i> Products
                         </button>
-                        <button
-                            onClick={() => navigate('/admin/categories')}
-                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                        >
+                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left">
                             <i className="fas fa-tags mr-3"></i> Categories
                         </button>
-                        <button
-                            onClick={() => navigate('/admin/orders')}
-                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                        >
+                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left">
                             <i className="fas fa-shopping-cart mr-3"></i> Orders
                         </button>
-                        <button
-                            onClick={() => navigate('/admin/reports')}
-                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                        >
-                            <i className="fas fa-file-alt mr-3"></i> Reports
-                        </button>
-                        <button
-                            onClick={() => navigate('/')}
-                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                        >
+                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left">
                             <i className="fas fa-home mr-3"></i> Home
                         </button>
-                        <button
-                            onClick={handleLogout}
-                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left mt-4 border-t border-indigo-800"
-                        >
+                        <button className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left mt-4 border-t border-teal-800">
                             <i className="fas fa-sign-out-alt mr-3"></i> Logout
                         </button>
                     </nav>
@@ -203,7 +181,7 @@ export default function AdminDashboard() {
 
                 {/* Main Content with Loading */}
                 <main className="flex-1 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
                 </main>
             </div>
         );
@@ -216,8 +194,8 @@ export default function AdminDashboard() {
             {
                 label: 'Revenue (VND)',
                 data: revenueValues,
-                borderColor: '#4f46e5',
-                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                borderColor: '#14b8a6',
+                backgroundColor: 'rgba(20, 184, 166, 0.1)',
                 fill: true,
                 tension: 0.4,
             },
@@ -239,24 +217,30 @@ export default function AdminDashboard() {
         },
     };
 
-    // Traffic Chart Data (Orders by Status)
-    const trafficData = {
+    // Orders Bar Chart Data
+    const ordersData = {
         labels: statusLabels,
         datasets: [
             {
+                label: 'Orders',
                 data: statusValues,
                 backgroundColor: statusColors,
-                hoverOffset: 4,
+                borderRadius: 8,
             },
         ],
     };
 
-    const trafficOptions = {
+    const ordersOptions = {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
             legend: {
-                position: 'bottom',
+                display: false,
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
             },
         },
     };
@@ -264,60 +248,54 @@ export default function AdminDashboard() {
     return (
         <div className="flex h-screen overflow-hidden bg-gray-100">
             {/* Sidebar */}
-            <aside className={`w-64 bg-indigo-900 text-white flex-shrink-0 flex-col ${isSidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
-                <div className="p-6 border-b border-indigo-800 flex items-center justify-center">
-                    <img
-                        src="/picture/logo.png"
-                        alt="Logo"
-                        className="h-16 w-16 object-cover rounded-full"
-                    />
+            <aside className={`w-64 bg-teal-900 text-white flex-shrink-0 flex-col ${isSidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
+                <div className="p-6 border-b border-teal-800">
+                    <div className="flex items-center justify-center mb-4">
+                        <img
+                            src="/picture/logo.png"
+                            alt="Logo"
+                            className="h-16 w-16 object-cover rounded-full"
+                        />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm text-teal-300">Manager Panel</p>
+                        <p className="text-xs text-teal-400 mt-1">{user?.username || 'Manager'}</p>
+                    </div>
                 </div>
                 <nav className="flex-1 mt-4">
                     <button
-                        onClick={() => navigate('/admin/dashboard')}
-                        className="w-full flex items-center px-6 py-3 bg-indigo-800 border-l-4 border-blue-400 text-left"
+                        onClick={() => navigate('/manager/dashboard')}
+                        className="w-full flex items-center px-6 py-3 bg-teal-800 border-l-4 border-teal-400 text-left"
                     >
                         <i className="fas fa-chart-line mr-3"></i> Dashboard
                     </button>
                     <button
-                        onClick={() => navigate('/admin/users')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-users mr-3"></i> Users
-                    </button>
-                    <button
                         onClick={() => navigate('/admin/products')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left"
                     >
                         <i className="fas fa-box mr-3"></i> Products
                     </button>
                     <button
                         onClick={() => navigate('/admin/categories')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left"
                     >
                         <i className="fas fa-tags mr-3"></i> Categories
                     </button>
                     <button
                         onClick={() => navigate('/admin/orders')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left"
                     >
                         <i className="fas fa-shopping-cart mr-3"></i> Orders
                     </button>
                     <button
-                        onClick={() => navigate('/admin/reports')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-file-alt mr-3"></i> Reports
-                    </button>
-                    <button
                         onClick={() => navigate('/')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left"
                     >
                         <i className="fas fa-home mr-3"></i> Home
                     </button>
                     <button
                         onClick={handleLogout}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left mt-4 border-t border-indigo-800"
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-800 transition text-left mt-4 border-t border-teal-800"
                     >
                         <i className="fas fa-sign-out-alt mr-3"></i> Logout
                     </button>
@@ -343,14 +321,17 @@ export default function AdminDashboard() {
                         >
                             <i className="fas fa-bars text-xl"></i>
                         </button>
-                        <h2 className="text-lg md:text-xl font-semibold text-gray-800">Dashboard</h2>
+                        <div>
+                            <h2 className="text-lg md:text-xl font-semibold text-gray-800">Manager Dashboard</h2>
+                            <p className="text-xs text-gray-500">Welcome back, {user?.name || user?.username}</p>
+                        </div>
                     </div>
                     <div className="flex items-center space-x-4">
-                        <button className="text-gray-500 hover:text-indigo-600">
+                        <button className="text-gray-500 hover:text-teal-600">
                             <i className="fas fa-bell"></i>
                         </button>
-                        <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
-                            {user?.username?.charAt(0).toUpperCase() || 'A'}
+                        <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold">
+                            {user?.username?.charAt(0).toUpperCase() || 'M'}
                         </div>
                     </div>
                 </header>
@@ -360,9 +341,16 @@ export default function AdminDashboard() {
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
                         {stats.map((stat, index) => (
-                            <div key={index} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                                <p className="text-gray-500 text-sm">{stat.title}</p>
-                                <h3 className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.value}</h3>
+                            <div key={index} className={`${stat.bgColor} p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow`}>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-gray-600 text-sm font-medium">{stat.title}</p>
+                                        <h3 className={`text-2xl font-bold mt-2 ${stat.color}`}>{stat.value}</h3>
+                                    </div>
+                                    <div className={`w-12 h-12 rounded-full ${stat.bgColor} flex items-center justify-center`}>
+                                        <i className={`fas ${stat.icon} text-xl ${stat.color}`}></i>
+                                    </div>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -371,30 +359,36 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8">
                         {/* Revenue Chart */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="font-bold text-gray-700 mb-4">Revenue Last 6 Months</h3>
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-gray-700">Revenue Trend</h3>
+                                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Last 6 Months</span>
+                            </div>
                             <div className="h-64">
                                 <Line data={revenueData} options={revenueOptions} />
                             </div>
                         </div>
 
-                        {/* Traffic Chart */}
+                        {/* Orders Chart */}
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                            <h3 className="font-bold text-gray-700 mb-4">Orders by Status</h3>
-                            <div className="max-w-[300px] mx-auto h-64 flex items-center justify-center">
-                                <Doughnut data={trafficData} options={trafficOptions} />
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-bold text-gray-700">Orders by Status</h3>
+                                <span className="text-xs text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Current</span>
+                            </div>
+                            <div className="h-64">
+                                <Bar data={ordersData} options={ordersOptions} />
                             </div>
                         </div>
                     </div>
 
-                    {/* Orders Table */}
+                    {/* Recent Orders Table */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                             <h3 className="font-bold text-gray-700">Recent Orders</h3>
                             <button
                                 onClick={() => navigate('/admin/orders')}
-                                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+                                className="text-teal-600 hover:text-teal-700 text-sm font-medium flex items-center gap-2"
                             >
-                                View All
+                                View All <i className="fas fa-arrow-right text-xs"></i>
                             </button>
                         </div>
                         <div className="overflow-x-auto">
@@ -405,20 +399,28 @@ export default function AdminDashboard() {
                                         <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Customer</th>
                                         <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Total</th>
                                         <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Date</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                     {dashboardData.recentOrders.map((order) => (
-                                        <tr key={order._id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 text-sm font-medium text-indigo-600">
+                                        <tr key={order._id} className="hover:bg-gray-50 transition">
+                                            <td className="px-6 py-4 text-sm font-medium text-teal-600">
                                                 #{order._id.slice(-8).toUpperCase()}
                                             </td>
-                                            <td className="px-6 py-4 text-sm">{order.user?.username || order.email || 'N/A'}</td>
-                                            <td className="px-6 py-4 text-sm font-semibold">{formatPrice(order.totalAmount)}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                                                {order.user?.username || order.email || 'N/A'}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                                                {formatPrice(order.totalAmount)}
+                                            </td>
                                             <td className="px-6 py-4 text-xs">
-                                                <span className={`${getStatusColor(order.status)} px-2 py-1 rounded-full`}>
+                                                <span className={`${getStatusColor(order.status)} px-3 py-1 rounded-full font-medium`}>
                                                     {getStatusText(order.status)}
                                                 </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-500">
+                                                {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                                             </td>
                                         </tr>
                                     ))}

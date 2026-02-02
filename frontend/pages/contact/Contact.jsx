@@ -47,7 +47,16 @@ const Contact = () => {
             <Header />
 
             {/* Hero Section */}
-            <div className="relative w-full h-64 md:h-80 bg-gradient-to-r from-gray-900 to-black overflow-hidden">
+            <div className="relative w-full h-64 md:h-96 overflow-hidden">
+                {/* Background Image */}
+                <img
+                    src="https://images.unsplash.com/photo-1423666639041-f56000c27a9a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80"
+                    alt="Contact Us Background"
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* Dark Overlay */}
+                <div className="absolute inset-0 bg-black/50"></div>
+
                 <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center z-20 px-4">
                         <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">

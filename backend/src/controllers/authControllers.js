@@ -15,7 +15,7 @@ const generateToken = (userId) => {
 // Register
 export const register = async (req, res) => {
   try {
-    const { username, name, email, password } = req.body;
+    const { username, name, email, password, phone } = req.body;
 
     if ((!username && !name) || !email || !password) {
       return res.status(400).json({
@@ -50,6 +50,7 @@ export const register = async (req, res) => {
       name: finalName,
       email,
       password,
+      phone: phone || "",
     });
 
     await user.save();

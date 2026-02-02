@@ -6,15 +6,18 @@ import { toast } from 'sonner';
 
 const UserManagement = () => {
     const navigate = useNavigate();
-    const { logout } = useAuth();
+    const { logout, user } = useAuth();
     const [users, setUsers] = useState([]);
-    const [roles, setRoles] = useState([]);
+    const [setRoles] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [deleteUserId, setDeleteUserId] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [roleFilter, setRoleFilter] = useState('');
+    const [sortBy, setSortBy] = useState('default');
     const [formData, setFormData] = useState({
         username: '',
         name: '',
@@ -22,7 +25,7 @@ const UserManagement = () => {
         password: '',
         phone: '',
         address: '',
-        roleIds: []
+        role: '' // Thay roleIds bằng role (single value)
     });
 
     useEffect(() => {
@@ -37,7 +40,7 @@ const UserManagement = () => {
             setUsers(response.data || response);
         } catch (error) {
             console.error('Error fetching users:', error);
-            toast.error('Không thể tải danh sách người dùng');
+            toast.error('Failed to load users list');
         } finally {
             setLoading(false);
         }
@@ -66,13 +69,22 @@ const UserManagement = () => {
             password: '',
             phone: '',
             address: '',
-            roleIds: []
+            role: '' // Mặc định không chọn vai trò
         });
         setShowModal(true);
     };
 
     const openEditModal = (user) => {
         setEditingUser(user);
+
+        // Lấy role từ user.role (string) hoặc user.roles[0].name
+        let userRole = '';
+        if (user.role) {
+            userRole = user.role.toLowerCase();
+        } else if (user.roles && user.roles.length > 0) {
+            userRole = user.roles[0].name.toLowerCase();
+        }
+
         setFormData({
             username: user.username || '',
             name: user.name || '',
@@ -80,7 +92,7 @@ const UserManagement = () => {
             password: '',
             phone: user.phone || '',
             address: user.address || '',
-            roleIds: user.roles ? user.roles.map(r => r._id) : []
+            role: userRole
         });
         setShowModal(true);
     };
@@ -93,14 +105,47 @@ const UserManagement = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Required fields validation
         if (!formData.username || !formData.name || !formData.email) {
-            toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+            toast.error('Please fill in all required fields');
             return;
         }
 
-        if (!editingUser && !formData.password) {
-            toast.error('Vui lòng nhập mật khẩu');
+        // Username validation (alphanumeric, 3-20 characters)
+        const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+        if (!usernameRegex.test(formData.username)) {
+            toast.error('Username must be 3-20 characters and contain only letters, numbers, and underscores');
             return;
+        }
+
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            toast.error('Please enter a valid email address');
+            return;
+        }
+
+        // Phone validation (if provided)
+        if (formData.phone && formData.phone.trim()) {
+            const phoneRegex = /^[0-9]{10,11}$/;
+            if (!phoneRegex.test(formData.phone.replace(/[\s-]/g, ''))) {
+                toast.error('Phone number must be 10-11 digits');
+                return;
+            }
+        }
+
+        // Password validation for new users
+        if (!editingUser && !formData.password) {
+            toast.error('Please enter a password');
+            return;
+        }
+
+        // Password strength validation (if provided)
+        if (formData.password && formData.password.trim()) {
+            if (formData.password.length < 6) {
+                toast.error('Password must be at least 6 characters');
+                return;
+            }
         }
 
         try {
@@ -110,6 +155,7 @@ const UserManagement = () => {
                 email: formData.email,
                 phone: formData.phone,
                 address: formData.address,
+                role: formData.role || 'user' // Lưu role: "user", "staff", "manager", "admin"
             };
 
             if (formData.password) {
@@ -118,49 +164,30 @@ const UserManagement = () => {
 
             if (editingUser) {
                 await userAPI.update(editingUser._id, userData);
-
-                if (formData.roleIds.length > 0) {
-                    await userAPI.assignRoles(editingUser._id, formData.roleIds);
-                }
-
-                toast.success('Cập nhật người dùng thành công!');
+                toast.success('User updated successfully!');
             } else {
-                const newUser = await userAPI.create(userData);
-
-                if (formData.roleIds.length > 0 && newUser._id) {
-                    await userAPI.assignRoles(newUser._id, formData.roleIds);
-                }
-
-                toast.success('Thêm người dùng thành công!');
+                await userAPI.create(userData);
+                toast.success('User created successfully!');
             }
 
             setShowModal(false);
             fetchUsers();
         } catch (error) {
             console.error('Error saving user:', error);
-            toast.error(error.response?.data?.message || 'Không thể lưu người dùng');
+            toast.error(error.response?.data?.message || 'Failed to save user');
         }
     };
 
     const handleDelete = async () => {
         try {
             await userAPI.delete(deleteUserId);
-            toast.success('Xóa người dùng thành công!');
+            toast.success('User deleted successfully!');
             setShowDeleteModal(false);
             fetchUsers();
         } catch (error) {
             console.error('Error deleting user:', error);
-            toast.error(error.response?.data?.message || 'Không thể xóa người dùng');
+            toast.error(error.response?.data?.message || 'Failed to delete user');
         }
-    };
-
-    const handleRoleChange = (roleId) => {
-        setFormData(prev => {
-            const roleIds = prev.roleIds.includes(roleId)
-                ? prev.roleIds.filter(id => id !== roleId)
-                : [...prev.roleIds, roleId];
-            return { ...prev, roleIds };
-        });
     };
 
     const getRoleNames = (userRoles, fallbackRole) => {
@@ -173,160 +200,255 @@ const UserManagement = () => {
         return 'User';
     };
 
+    const filteredUsers = users.filter(user => {
+        const matchesSearch =
+            user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const userRole = user.role || (user.roles && user.roles.length > 0 ? user.roles[0].name.toLowerCase() : 'user');
+        const matchesRole = roleFilter === '' || userRole.toLowerCase() === roleFilter.toLowerCase();
+
+        return matchesSearch && matchesRole;
+    });
+
+    const sortedUsers = [...filteredUsers].sort((a, b) => {
+        switch (sortBy) {
+            case 'name-asc':
+                return (a.name || '').localeCompare(b.name || '');
+            case 'name-desc':
+                return (b.name || '').localeCompare(a.name || '');
+            case 'email-asc':
+                return (a.email || '').localeCompare(b.email || '');
+            case 'email-desc':
+                return (b.email || '').localeCompare(a.email || '');
+            case 'username-asc':
+                return (a.username || '').localeCompare(b.username || '');
+            case 'username-desc':
+                return (b.username || '').localeCompare(a.username || '');
+            default:
+                return 0;
+        }
+    });
+
     return (
-        <div className="min-h-screen bg-gray-50 flex">
-            {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-indigo-900 to-indigo-700 text-white transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 ease-in-out`}>
-                <div className="flex items-center justify-between px-6 py-4 border-b border-indigo-800">
-                    <div className="flex items-center space-x-3">
+        <>
+            <div className="flex h-screen overflow-hidden bg-gray-100">
+                {/* Sidebar */}
+                <aside className={`w-64 bg-indigo-900 text-white flex-shrink-0 flex-col ${sidebarOpen ? 'flex' : 'hidden'} md:flex fixed md:relative h-full z-50`}>
+                    <div className="p-6 border-b border-indigo-800 flex items-center justify-center">
                         <img
                             src="/picture/logo.png"
                             alt="Logo"
-                            className="w-10 h-10 rounded-full object-cover"
+                            className="h-16 w-16 object-cover rounded-full"
                         />
-                        <h1 className="text-xl font-bold">Admin Panel</h1>
                     </div>
-                    <button onClick={() => setSidebarOpen(false)} className="md:hidden">
-                        <i className="fas fa-times"></i>
-                    </button>
-                </div>
 
-                <nav className="flex-1 mt-4">
-                    <button
-                        onClick={() => navigate('/admin/dashboard')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-chart-line mr-3"></i> Dashboard
-                    </button>
-                    <button
-                        onClick={() => navigate('/admin/users')}
-                        className="w-full flex items-center px-6 py-3 bg-indigo-800 border-l-4 border-blue-400 text-left"
-                    >
-                        <i className="fas fa-users mr-3"></i> Người dùng
-                    </button>
-                    <button
-                        onClick={() => navigate('/admin/products')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-box mr-3"></i> Sản phẩm
-                    </button>
-                    <button
-                        onClick={() => navigate('/')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-home mr-3"></i> Về trang chủ
-                    </button>
-                    <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left mt-4 border-t border-indigo-800"
-                    >
-                        <i className="fas fa-sign-out-alt mr-3"></i> Đăng xuất
-                    </button>
-                </nav>
-            </aside>
-
-            {/* Main Content */}
-            <div className="flex-1 md:ml-64">
-                {/* Top Bar */}
-                <header className="bg-white shadow-sm sticky top-0 z-40">
-                    <div className="flex items-center justify-between px-6 py-4">
+                    <nav className="flex-1 mt-4">
                         <button
-                            onClick={() => setSidebarOpen(true)}
-                            className="md:hidden text-gray-600"
+                            onClick={() => navigate('/admin/dashboard')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
                         >
-                            <i className="fas fa-bars text-xl"></i>
+                            <i className="fas fa-chart-line mr-3"></i> Dashboard
                         </button>
-                        <h2 className="text-2xl font-bold text-gray-800">Quản lý Người dùng</h2>
+                        <button
+                            onClick={() => navigate('/admin/users')}
+                            className="w-full flex items-center px-6 py-3 bg-indigo-800 border-l-4 border-blue-400 text-left"
+                        >
+                            <i className="fas fa-users mr-3"></i> Users
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/products')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-box mr-3"></i> Products
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/categories')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-tags mr-3"></i> Categories
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/orders')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-shopping-cart mr-3"></i> Orders
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/reports')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-file-alt mr-3"></i> Reports
+                        </button>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-home mr-3"></i> Home
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left mt-4 border-t border-indigo-800"
+                        >
+                            <i className="fas fa-sign-out-alt mr-3"></i> Logout
+                        </button>
+                    </nav>
+                </aside>
+
+                {/* Overlay for mobile */}
+                {sidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                    ></div>
+                )}
+
+                {/* Main Content */}
+                <main className="flex-1 flex flex-col overflow-y-auto">
+                    {/* Header */}
+                    <header className="bg-white shadow-sm px-4 md:px-8 py-4 flex justify-between items-center">
                         <div className="flex items-center space-x-4">
-                            <button className="text-gray-600 hover:text-gray-800">
-                                <i className="fas fa-bell text-xl"></i>
-                            </button>
-                        </div>
-                    </div>
-                </header>
-
-                {/* Content */}
-                <main className="p-6">
-                    <div className="bg-white rounded-lg shadow-md p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-semibold text-gray-800">Danh sách người dùng</h3>
                             <button
-                                onClick={openAddModal}
-                                className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2"
+                                className="md:hidden text-gray-500"
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
                             >
-                                <i className="fas fa-plus"></i>
-                                <span>Thêm người dùng</span>
+                                <i className="fas fa-bars text-xl"></i>
                             </button>
+                            <h2 className="text-lg md:text-xl font-semibold text-gray-800">User Management</h2>
                         </div>
+                        <div className="flex items-center space-x-4">
+                            <button className="text-gray-500 hover:text-indigo-600">
+                                <i className="fas fa-bell"></i>
+                            </button>
+                            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">
+                                {user?.username?.charAt(0).toUpperCase() || 'A'}
+                            </div>
+                        </div>
+                    </header>
 
-                        {loading ? (
-                            <div className="text-center py-12">
-                                <i className="fas fa-spinner fa-spin text-4xl text-indigo-600"></i>
+                    {/* Content */}
+                    <div className="p-4 md:p-8">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+                            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                <h3 className="font-bold text-gray-700">User List</h3>
+                                <button
+                                    onClick={openAddModal}
+                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center space-x-2"
+                                >
+                                    <i className="fas fa-plus"></i>
+                                    <span>Add User</span>
+                                </button>
                             </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Điện thoại</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vai trò</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {users.map((user) => (
-                                            <tr key={user._id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-900">{user.name}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-900">{user.email}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-900">{user.phone || '-'}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                                                        {getRoleNames(user.roles, user.role)}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <button
-                                                        onClick={() => openEditModal(user)}
-                                                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => openDeleteModal(user._id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
+
+                            {/* Filter Section */}
+                            <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row gap-4">
+                                <div className="flex-1">
+                                    <div className="relative">
+                                        <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                                        <input
+                                            type="text"
+                                            placeholder="Search by name, username, email..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <select
+                                        value={roleFilter}
+                                        onChange={(e) => setRoleFilter(e.target.value)}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    >
+                                        <option value="">All Roles</option>
+                                        <option value="user">User</option>
+                                        <option value="staff">Staff</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[150px]"
+                                    >
+                                        <option value="default">Sort By</option>
+                                        <option value="name-asc">Name: A-Z</option>
+                                        <option value="name-desc">Name: Z-A</option>
+                                        <option value="username-asc">Username: A-Z</option>
+                                        <option value="username-desc">Username: Z-A</option>
+                                        <option value="email-asc">Email: A-Z</option>
+                                        <option value="email-desc">Email: Z-A</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {loading ? (
+                                <div className="flex justify-center items-center h-64">
+                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Username</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Name</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Email</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Phone</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Role</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {sortedUsers.map((user) => (
+                                                <tr key={user._id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 text-sm font-medium">{user.username}</td>
+                                                    <td className="px-6 py-4 text-sm">{user.name}</td>
+                                                    <td className="px-6 py-4 text-sm">{user.email}</td>
+                                                    <td className="px-6 py-4 text-sm">{user.phone || '-'}</td>
+                                                    <td className="px-6 py-4 text-xs">
+                                                        <span className="bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
+                                                            {getRoleNames(user.roles, user.role)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">
+                                                        <div className="flex space-x-2">
+                                                            <button
+                                                                onClick={() => openEditModal(user)}
+                                                                className="text-blue-600 hover:text-blue-800"
+                                                            >
+                                                                <i className="fas fa-edit"></i>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => openDeleteModal(user._id)}
+                                                                className="text-red-600 hover:text-red-800"
+                                                            >
+                                                                <i className="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </main>
             </div>
 
             {/* Add/Edit Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div
+                    className="fixed inset-0 bg-black flex items-center justify-center z-50 p-4"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+                >
                     <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <div className="flex justify-between items-center p-6 border-b">
-                            <h3 className="text-xl font-semibold">
-                                {editingUser ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}
+                            <h3 className="text-xl font-bold text-gray-900">
+                                {editingUser ? 'Update User' : 'Add New User'}
                             </h3>
                             <button
                                 onClick={() => setShowModal(false)}
@@ -353,7 +475,7 @@ const UserManagement = () => {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Tên <span className="text-red-500">*</span>
+                                        Name <span className="text-red-500">*</span>
                                     </label>
                                     <input
                                         type="text"
@@ -379,21 +501,21 @@ const UserManagement = () => {
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Mật khẩu {!editingUser && <span className="text-red-500">*</span>}
+                                        Password {!editingUser && <span className="text-red-500">*</span>}
                                     </label>
                                     <input
                                         type="password"
                                         value={formData.password}
                                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                        placeholder={editingUser ? "Để trống nếu không đổi" : ""}
+                                        placeholder={editingUser ? "Leave blank if no change" : ""}
                                         required={!editingUser}
                                     />
                                 </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Điện thoại
+                                        Phone
                                     </label>
                                     <input
                                         type="tel"
@@ -405,7 +527,7 @@ const UserManagement = () => {
 
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Địa chỉ
+                                        Address
                                     </label>
                                     <input
                                         type="text"
@@ -417,21 +539,19 @@ const UserManagement = () => {
 
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Vai trò
+                                        Role
                                     </label>
-                                    <div className="space-y-2">
-                                        {roles.map((role) => (
-                                            <label key={role._id} className="flex items-center space-x-2 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.roleIds.includes(role._id)}
-                                                    onChange={() => handleRoleChange(role._id)}
-                                                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                                                />
-                                                <span className="text-sm text-gray-700">{role.name}</span>
-                                            </label>
-                                        ))}
-                                    </div>
+                                    <select
+                                        value={formData.role}
+                                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    >
+                                        <option value="">-- Select role --</option>
+                                        <option value="user">User</option>
+                                        <option value="staff">Staff</option>
+                                        <option value="manager">Manager</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -441,13 +561,13 @@ const UserManagement = () => {
                                     onClick={() => setShowModal(false)}
                                     className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                                 >
-                                    Hủy
+                                    Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
                                 >
-                                    {editingUser ? 'Cập nhật' : 'Thêm'}
+                                    {editingUser ? 'Update' : 'Add'}
                                 </button>
                             </div>
                         </form>
@@ -457,31 +577,34 @@ const UserManagement = () => {
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div
+                    className="fixed inset-0 bg-black flex items-center justify-center z-50 p-4"
+                    style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+                >
                     <div className="bg-white rounded-lg max-w-md w-full p-6">
                         <div className="text-center">
                             <i className="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
-                            <h3 className="text-xl font-semibold mb-2">Xác nhận xóa</h3>
-                            <p className="text-gray-600 mb-6">Bạn có chắc chắn muốn xóa người dùng này?</p>
+                            <h3 className="text-xl font-semibold mb-2">Confirm Delete</h3>
+                            <p className="text-gray-600 mb-6">Are you sure you want to delete this user?</p>
                             <div className="flex justify-center space-x-4">
                                 <button
                                     onClick={() => setShowDeleteModal(false)}
                                     className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                                 >
-                                    Hủy
+                                    Cancel
                                 </button>
                                 <button
                                     onClick={handleDelete}
                                     className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                                 >
-                                    Xóa
+                                    Delete
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+        </>
     );
 };
 

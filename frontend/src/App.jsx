@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import ManagerRoute from './components/ManagerRoute';
 import HomePage from '../pages/homepage/Homepage';
 import AuthPage from '../pages/auth/AuthPage';
 import NotFound from '../pages/NotFound';
@@ -17,6 +18,10 @@ import Contact from '../pages/contact/contact';
 import AdminDashboard from '../pages/admin/Dashboard';
 import ProductManagement from '../pages/admin/ProductManagement';
 import UserManagement from '../pages/admin/UserManagement';
+import OrderManagement from '../pages/admin/OrderManagement';
+import CategoryManagement from '../pages/admin/CategoryManagement';
+import ReportsAnalytics from '../pages/admin/ReportsAnalytics';
+import ManagerDashboard from '../pages/manager/ManagerDashboard';
 
 function App() {
   return (
@@ -55,6 +60,26 @@ function App() {
               <AdminRoute>
                 <ProductManagement />
               </AdminRoute>
+            } />
+            <Route path="/admin/categories" element={
+              <AdminRoute>
+                <CategoryManagement />
+              </AdminRoute>
+            } />
+            <Route path="/admin/orders" element={
+              <AdminRoute>
+                <OrderManagement />
+              </AdminRoute>
+            } />
+            <Route path="/admin/reports" element={
+              <AdminRoute>
+                <ReportsAnalytics />
+              </AdminRoute>
+            } />
+            <Route path="/manager/dashboard" element={
+              <ManagerRoute>
+                <ManagerDashboard />
+              </ManagerRoute>
             } />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/register" element={<AuthPage />} />

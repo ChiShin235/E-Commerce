@@ -78,6 +78,21 @@ export const categoryAPI = {
     const response = await api.get(`/categories/${id}`);
     return response.data;
   },
+
+  create: async (categoryData) => {
+    const response = await api.post("/categories", categoryData);
+    return response.data;
+  },
+
+  update: async (id, categoryData) => {
+    const response = await api.put(`/categories/${id}`, categoryData);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/categories/${id}`);
+    return response.data;
+  },
 };
 
 export const cartAPI = {
@@ -145,11 +160,56 @@ export const orderAPI = {
     const response = await api.get("/orders/my");
     return response.data;
   },
+
+  update: async (id, orderData) => {
+    const response = await api.put(`/orders/${id}`, orderData);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/orders/${id}`);
+    return response.data;
+  },
 };
 
 export const vnpayAPI = {
   createPaymentUrl: async (payload) => {
     const response = await api.post("/vnpay/create", payload);
+    return response.data;
+  },
+};
+
+export const statsAPI = {
+  getDashboard: async () => {
+    const response = await api.get("/stats/dashboard");
+    return response.data;
+  },
+};
+
+export const reportAPI = {
+  getSales: async (startDate, endDate) => {
+    const params = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const response = await api.get("/reports/sales", { params });
+    return response.data;
+  },
+  getTopProducts: async (limit = 10) => {
+    const response = await api.get("/reports/top-products", {
+      params: { limit },
+    });
+    return response.data;
+  },
+  getRevenueByCategory: async () => {
+    const response = await api.get("/reports/revenue-by-category");
+    return response.data;
+  },
+  getCustomerStats: async () => {
+    const response = await api.get("/reports/customers");
+    return response.data;
+  },
+  getInventory: async () => {
+    const response = await api.get("/reports/inventory");
     return response.data;
   },
 };
