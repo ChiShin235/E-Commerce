@@ -134,8 +134,14 @@ export const handleVnpayReturn = async (req, res) => {
 };
 
 export const handleVnpayIpn = async (req, res) => {
+
+  if (!req.query || Object.keys(req.query).length === 0) {
+    return res.status(200).json({ message: "IPN OK" });
+  }
+
   try {
     const verify = vnpay.verifyIpnCall(req.query);
+
     if (!verify.isVerified) {
       return res.json(IpnFailChecksum);
     }
@@ -149,8 +155,7 @@ export const handleVnpayIpn = async (req, res) => {
     }
 
     const amount = Math.round(Number(order.totalAmount));
-    const verifyAmount = Number(verify.vnp_Amount);
-    if (!Number.isFinite(verifyAmount) || verifyAmount !== amount) {
+    if (Number(verify.vnp_Amount) !== amount) {
       return res.json(IpnInvalidAmount);
     }
 
@@ -161,26 +166,21 @@ export const handleVnpayIpn = async (req, res) => {
     order.status = "paid";
     await order.save();
 
-    const existingPayment = await Payment.findOne({ order: order._id });
-    if (existingPayment) {
-      existingPayment.paymentMethod = "vnpay";
-      existingPayment.paymentStatus = "paid";
-      existingPayment.transactionCode = verify.vnp_TransactionNo;
-      existingPayment.paidAt = new Date();
-      await existingPayment.save();
-    } else {
-      await Payment.create({
-        order: order._id,
+    await Payment.findOneAndUpdate(
+      { order: order._id },
+      {
         paymentMethod: "vnpay",
         paymentStatus: "paid",
         transactionCode: verify.vnp_TransactionNo,
         paidAt: new Date(),
-      });
-    }
+      },
+      { upsert: true }
+    );
 
     return res.json(IpnSuccess);
-  } catch (error) {
-    console.error("Error in handleVnpayIpn:", error);
+  } catch (err) {
+    console.error("IPN error:", err);
     return res.json(IpnUnknownError);
   }
 };
+

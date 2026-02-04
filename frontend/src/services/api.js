@@ -1,4 +1,4 @@
-﻿import api from "./axios";
+import api from "./axios";
 
 // API functions
 export const authAPI = {
@@ -175,6 +175,10 @@ export const orderAPI = {
 export const vnpayAPI = {
   createPaymentUrl: async (payload) => {
     const response = await api.post("/vnpay/create", payload);
+    return response.data;
+  },
+  verifyReturn: async (params) => {
+    const response = await api.get("/vnpay/return", { params });
     return response.data;
   },
 };

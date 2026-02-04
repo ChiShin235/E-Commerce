@@ -15,6 +15,7 @@ import Shop from '../pages/shop/shop';
 import Profile from '../pages/profile/Profile';
 import About from '../pages/about/About';
 import Contact from '../pages/contact/contact';
+import VnpayReturn from '../pages/payment/VnpayReturn';
 import AdminDashboard from '../pages/admin/Dashboard';
 import ProductManagement from '../pages/admin/ProductManagement';
 import UserManagement from '../pages/admin/UserManagement';
@@ -45,6 +46,7 @@ function App() {
                 <Order />
               </ProtectedRoute>
             } />
+            <Route path="/payment/vnpay-return" element={<VnpayReturn />} />
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
