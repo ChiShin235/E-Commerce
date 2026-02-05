@@ -14,8 +14,8 @@ const Navigate = () => {
       leftSubtitle: 'SHOP NOW',
       rightTitle: 'FPT®',
       rightSubtitle: 'THE ROLLING STONES',
-      leftImage: 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800&q=80',
-      rightImage: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80',
+      leftImage: 'https://i.pinimg.com/736x/bf/31/8c/bf318c439bd433880bf729504c8fc1e3.jpg',
+      rightImage: 'https://i.pinimg.com/736x/ae/e2/1f/aee21fbe2ef1b99629a753ead2067fa2.jpg',
       leftBg: 'bg-gradient-to-b from-red-700 to-amber-900',
       rightBg: 'bg-amber-900'
     },
@@ -25,8 +25,8 @@ const Navigate = () => {
       leftSubtitle: 'SHOP NOW',
       rightTitle: 'EXCLUSIVE',
       rightSubtitle: 'COLLECTION',
-      leftImage: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&q=80',
-      rightImage: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800&q=80',
+      leftImage: 'https://i.pinimg.com/736x/49/a2/16/49a21650f366b7892a4aeaee996b9d88.jpg',
+      rightImage: 'https://i.pinimg.com/736x/8f/bd/74/8fbd7481a68b226f42f8ee6217cdee0a.jpg',
       leftBg: 'bg-gradient-to-b from-blue-700 to-blue-900',
       rightBg: 'bg-blue-900'
     },
@@ -36,8 +36,8 @@ const Navigate = () => {
       leftSubtitle: 'SHOP NOW',
       rightTitle: 'LIMITED',
       rightSubtitle: 'EDITION',
-      leftImage: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=800&q=80',
-      rightImage: 'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=800&q=80',
+      leftImage: 'https://i.pinimg.com/736x/51/b5/5f/51b55f823cb8d028d2c220a40f5e55ea.jpg',
+      rightImage: 'https://i.pinimg.com/736x/c0/a6/3d/c0a63d21cc8defc9205be2b07f2a50f2.jpg',
       leftBg: 'bg-gradient-to-b from-purple-700 to-purple-900',
       rightBg: 'bg-purple-900'
     }
@@ -60,7 +60,7 @@ const Navigate = () => {
     if (!isPaused) {
       const interval = setInterval(() => {
         setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-      }, 3000); // Chuyển slide mỗi 3 giây
+      }, 2000); // Chuyển slide mỗi 2 giây
 
       return () => clearInterval(interval);
     }
