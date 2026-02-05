@@ -1,6 +1,9 @@
 ﻿import Order from "../models/Order.js";
 import OrderItem from "../models/OrderItem.js";
 import Payment from "../models/Payment.js";
+import Product from "../models/Product.js";
+import Cart from "../models/Cart.js";
+import CartItem from "../models/CartItem.js";
 
 const computeTotal = (items) => {
   return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -22,6 +25,20 @@ export const getOrderById = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+
+    // Kiểm tra quyền: chỉ cho phép user xem đơn hàng của chính họ hoặc admin/manager
+    const userId = req.userId;
+    const userRoles = req.user?.roles || [];
+    const isAdmin = userRoles.some(
+      (role) => role.name === "admin" || role.name === "manager",
+    );
+
+    if (!isAdmin && order.user.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: You can only view your own orders" });
+    }
+
     const items = await OrderItem.find({ order: order._id }).populate(
       "product",
     );
@@ -68,6 +85,19 @@ export const createOrder = async (req, res) => {
         price: item.price,
       })),
     );
+
+    // Trừ stock sản phẩm
+    for (const item of items) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: -item.quantity },
+      });
+    }
+
+    // Xóa giỏ hàng của user
+    const cart = await Cart.findOne({ user: userId });
+    if (cart) {
+      await CartItem.deleteMany({ cart: cart._id });
+    }
 
     res.status(201).json({ order: newOrder, items: orderItems });
   } catch (error) {
@@ -173,6 +203,90 @@ export const getMyOrders = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error while fetching orders",
+    });
+  }
+};
+
+// Cancel order by user
+export const cancelOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const userId = req.userId;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // Kiểm tra quyền sở hữu
+    if (order.user.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only cancel your own orders",
+      });
+    }
+
+    // Không cho phép hủy đơn đã bị hủy hoặc đã giao hàng
+    if (order.status === "cancelled" || order.status === "shipped") {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot cancel order with status: ${order.status}`,
+      });
+    }
+
+    // Kiểm tra thời gian: Chỉ cho phép hủy trong 24 giờ
+    const orderCreatedAt = new Date(order.createdAt);
+    const now = new Date();
+    const hoursSinceCreated = (now - orderCreatedAt) / (1000 * 60 * 60);
+
+    if (hoursSinceCreated > 24) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot cancel order after 24 hours from order creation",
+      });
+    }
+
+    // Nếu đơn hàng đã completed (đã thanh toán), đánh dấu cần hoàn tiền
+    const needsRefund = order.status === "completed";
+
+    // Cập nhật status thành cancelled
+    order.status = "cancelled";
+    await order.save();
+
+    // Cập nhật payment nếu cần hoàn tiền
+    if (needsRefund) {
+      await Payment.findOneAndUpdate(
+        { order: order._id },
+        {
+          paymentStatus: "refund_pending",
+        },
+      );
+    }
+
+    // Hoàn lại stock sản phẩm
+    const orderItems = await OrderItem.find({ order: order._id });
+    for (const item of orderItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: item.quantity },
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: needsRefund
+        ? "Order cancelled successfully. Refund will be processed within 3-5 business days."
+        : "Order cancelled successfully",
+      data: order,
+      needsRefund,
+    });
+  } catch (error) {
+    console.error("Error in cancelOrder:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while cancelling order",
     });
   }
 };

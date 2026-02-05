@@ -133,19 +133,23 @@ export default function ManagerOrders() {
             {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Top Bar */}
-                <header className="bg-white shadow-md p-4 flex justify-between items-center">
-                    <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="md:hidden text-gray-700 focus:outline-none"
-                    >
-                        <i className="fas fa-bars text-xl"></i>
-                    </button>
-                    <h1 className="text-2xl font-bold text-gray-800">Order Management</h1>
+                <header className="bg-white shadow-sm px-4 md:px-8 py-4 flex justify-between items-center">
                     <div className="flex items-center space-x-4">
-                        <span className="text-gray-700 font-medium">{user?.username}</span>
-                        <span className="px-3 py-1 bg-teal-100 text-teal-700 rounded-full text-sm font-semibold">
-                            Manager
-                        </span>
+                        <button
+                            className="md:hidden text-gray-500"
+                            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        >
+                            <i className="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 className="text-lg md:text-xl font-semibold text-gray-800">Order Manager</h2>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                        <button className="text-gray-500 hover:text-teal-600">
+                            <i className="fas fa-bell"></i>
+                        </button>
+                        <div className="w-8 h-8 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold">
+                            {user?.username?.charAt(0).toUpperCase() || 'M'}
+                        </div>
                     </div>
                 </header>
 

@@ -110,10 +110,32 @@ export default function AuthPage() {
             if (result.success) {
                 isNavigatingRef.current = true;
                 toast.success(result.message || 'Login successful!');
-                // Use setTimeout to ensure toast is shown before navigation
-                setTimeout(() => {
-                    navigate('/', { replace: true });
-                }, 100);
+
+                // Get user from localStorage to determine role
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+
+                    // Check role and redirect accordingly
+                    const userRole = user?.role;
+
+                    // Use setTimeout to ensure toast is shown before navigation
+                    setTimeout(() => {
+                        if (userRole === 'admin') {
+                            navigate('/admin/dashboard', { replace: true });
+                        } else if (userRole === 'manager') {
+                            navigate('/manager/dashboard', { replace: true });
+                        } else if (userRole === 'staff') {
+                            navigate('/staff/dashboard', { replace: true });
+                        } else {
+                            navigate('/', { replace: true });
+                        }
+                    }, 100);
+                } else {
+                    setTimeout(() => {
+                        navigate('/', { replace: true });
+                    }, 100);
+                }
             } else {
                 setIsLoading(false);
                 toast.error(result.message || 'Invalid email or password');

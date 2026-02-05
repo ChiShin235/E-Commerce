@@ -126,6 +126,7 @@ export default function Order() {
                     price: getItemPrice(item),
                 })),
                 status: 'pending',
+                paymentMethod: paymentMethod, // Thêm phương thức thanh toán
                 shippingAddress: {
                     firstName: formData.firstName,
                     lastName: formData.lastName,
@@ -161,6 +162,11 @@ export default function Order() {
             }
 
             toast.success('Đặt hàng thành công!');
+
+            // Xóa localStorage cart
+            const cartKey = user ? `cart_${user._id || user.id}` : 'cart_guest';
+            localStorage.setItem(cartKey, JSON.stringify([]));
+
             clearCart();
             navigate('/');
         } catch (error) {

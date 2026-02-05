@@ -166,6 +166,11 @@ export const orderAPI = {
     return response.data;
   },
 
+  cancel: async (id) => {
+    const response = await api.put(`/orders/${id}/cancel`);
+    return response.data;
+  },
+
   delete: async (id) => {
     const response = await api.delete(`/orders/${id}`);
     return response.data;

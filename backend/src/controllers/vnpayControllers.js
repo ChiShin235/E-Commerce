@@ -15,6 +15,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Order from "../models/Order.js";
 import Payment from "../models/Payment.js";
+import Product from "../models/Product.js";
+import Cart from "../models/Cart.js";
+import CartItem from "../models/CartItem.js";
+import OrderItem from "../models/OrderItem.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -121,6 +125,49 @@ export const createVnpayPaymentUrl = async (req, res) => {
 export const handleVnpayReturn = async (req, res) => {
   try {
     const verify = vnpay.verifyReturnUrl(req.query);
+
+    // Nếu xác minh thành công, cập nhật database
+    if (verify.isVerified && verify.isSuccess && verify.vnp_TxnRef) {
+      try {
+        const order = await Order.findById(verify.vnp_TxnRef);
+
+        if (order && order.status !== "completed" && order.status !== "paid") {
+          // Cập nhật trạng thái order
+          order.status = "completed";
+          await order.save();
+
+          // Cập nhật payment
+          await Payment.findOneAndUpdate(
+            { order: order._id },
+            {
+              paymentMethod: "vnpay",
+              paymentStatus: "completed",
+              transactionCode: verify.vnp_TransactionNo,
+              paidAt: new Date(),
+            },
+            { upsert: true },
+          );
+
+          // Trừ stock sản phẩm
+          const orderItems = await OrderItem.find({ order: order._id });
+          for (const item of orderItems) {
+            await Product.findByIdAndUpdate(item.product, {
+              $inc: { stock: -item.quantity },
+            });
+          }
+
+          // Xóa giỏ hàng của user
+          const cart = await Cart.findOne({ user: order.user });
+          if (cart) {
+            await CartItem.deleteMany({ cart: cart._id });
+          }
+        }
+      } catch (dbError) {
+        console.error("Error updating order in handleVnpayReturn:", dbError);
+        // Tiếp tục trả về response ngay cả khi có lỗi DB
+      }
+    }
+
     return res.status(200).json({
       isVerified: verify.isVerified,
       isSuccess: verify.isSuccess,
@@ -134,7 +181,6 @@ export const handleVnpayReturn = async (req, res) => {
 };
 
 export const handleVnpayIpn = async (req, res) => {
-
   if (!req.query || Object.keys(req.query).length === 0) {
     return res.status(200).json({ message: "IPN OK" });
   }
@@ -159,23 +205,37 @@ export const handleVnpayIpn = async (req, res) => {
       return res.json(IpnInvalidAmount);
     }
 
-    if (order.status === "paid") {
+    if (order.status === "paid" || order.status === "completed") {
       return res.json(InpOrderAlreadyConfirmed);
     }
 
-    order.status = "paid";
+    order.status = "completed";
     await order.save();
 
     await Payment.findOneAndUpdate(
       { order: order._id },
       {
         paymentMethod: "vnpay",
-        paymentStatus: "paid",
+        paymentStatus: "completed",
         transactionCode: verify.vnp_TransactionNo,
         paidAt: new Date(),
       },
-      { upsert: true }
+      { upsert: true },
     );
+
+    // Trừ stock sản phẩm
+    const orderItems = await OrderItem.find({ order: order._id });
+    for (const item of orderItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stock: -item.quantity },
+      });
+    }
+
+    // Xóa giỏ hàng của user
+    const cart = await Cart.findOne({ user: order.user });
+    if (cart) {
+      await CartItem.deleteMany({ cart: cart._id });
+    }
 
     return res.json(IpnSuccess);
   } catch (err) {
@@ -183,4 +243,3 @@ export const handleVnpayIpn = async (req, res) => {
     return res.json(IpnUnknownError);
   }
 };
-

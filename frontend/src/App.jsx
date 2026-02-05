@@ -5,6 +5,7 @@ import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ManagerRoute from './components/ManagerRoute';
+import StaffRoute from './components/StaffRoute';
 import HomePage from '../pages/homepage/Homepage';
 import AuthPage from '../pages/auth/AuthPage';
 import NotFound from '../pages/NotFound';
@@ -27,6 +28,7 @@ import ManagerOrders from '../pages/manager/ManagerOrders';
 import ManagerProducts from '../pages/manager/ManagerProducts';
 import ManagerReports from '../pages/manager/ManagerReports';
 import ManagerCategories from '../pages/manager/ManagerCategories';
+import StaffDashboard from '../pages/staff/StaffDashboard';
 
 function App() {
   return (
@@ -106,6 +108,11 @@ function App() {
               <ManagerRoute>
                 <ManagerReports />
               </ManagerRoute>
+            } />
+            <Route path="/staff/dashboard" element={
+              <StaffRoute>
+                <StaffDashboard />
+              </StaffRoute>
             } />
             <Route path="/login" element={<AuthPage />} />
             <Route path="/register" element={<AuthPage />} />

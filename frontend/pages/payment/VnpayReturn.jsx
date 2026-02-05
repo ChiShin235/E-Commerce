@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { vnpayAPI } from "../../src/services/api";
+import { vnpayAPI, cartAPI } from "../../src/services/api";
+import { useCart } from "../../src/context/CartContext";
+import { useAuth } from "../../src/context/AuthContext";
 
 const buildParams = (paramString) => {
   const params = {};
@@ -16,6 +18,8 @@ const VnpayReturn = () => {
   const paramString = searchParams.toString();
   const params = useMemo(() => buildParams(paramString), [paramString]);
   const hasParams = paramString.length > 0;
+  const { clearCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const [state, setState] = useState({
     loading: true,
     error: null,
@@ -38,6 +42,25 @@ const VnpayReturn = () => {
       .then((data) => {
         if (!isActive) return;
         setState({ loading: false, error: null, data });
+
+        // Nếu thanh toán thành công, xóa cart và reload từ backend
+        if (data?.isVerified && data?.isSuccess) {
+          // Xóa localStorage cart
+          if (isAuthenticated && user) {
+            const cartKey = `cart_${user._id || user.id}`;
+            localStorage.setItem(cartKey, JSON.stringify([]));
+          } else {
+            localStorage.setItem('cart_guest', JSON.stringify([]));
+          }
+
+          // Clear cart context
+          clearCart();
+
+          // Reload trang để sync lại cart từ backend (đã xóa rồi)
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
       })
       .catch((error) => {
         if (!isActive) return;
@@ -55,10 +78,10 @@ const VnpayReturn = () => {
   const title = state.loading
     ? "Đang xác minh giao dịch..."
     : state.error
-    ? "Xác minh giao dịch thất bại"
-    : isSuccess
-    ? "Thanh toán thành công"
-    : "Thanh toán chưa thành công";
+      ? "Xác minh giao dịch thất bại"
+      : isSuccess
+        ? "Thanh toán thành công"
+        : "Thanh toán chưa thành công";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,11 +167,10 @@ const VnpayReturn = () => {
                 <div className="border border-gray-200 bg-white p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-sm font-medium text-gray-600">Trạng thái xác minh</span>
-                    <span className={`inline-flex w-fit items-center gap-2 border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${
-                      state.data?.isVerified
+                    <span className={`inline-flex w-fit items-center gap-2 border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${state.data?.isVerified
                         ? "border-black bg-black text-white"
                         : "border-gray-300 bg-white text-gray-900"
-                    }`}>
+                      }`}>
                       {state.data?.isVerified ? "Hợp lệ" : "Không hợp lệ"}
                     </span>
                   </div>

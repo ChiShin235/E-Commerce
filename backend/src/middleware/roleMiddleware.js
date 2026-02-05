@@ -71,6 +71,41 @@ export const requireManager = async (req, res, next) => {
   }
 };
 
+export const requireStaff = async (req, res, next) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.role !== "staff") {
+      return res.status(403).json({
+        success: false,
+        message: "Staff access required",
+      });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("Error in requireStaff:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while checking staff role",
+    });
+  }
+};
+
 export const requireManagerOrAdmin = async (req, res, next) => {
   try {
     if (!req.userId) {

@@ -133,7 +133,11 @@ export default function OrderManagement() {
         const matchesSearch =
             order._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             order.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.shippingAddress?.toLowerCase().includes(searchTerm.toLowerCase());
+            order.shippingAddress?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.shippingAddress?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.shippingAddress?.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.shippingAddress?.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            order.shippingAddress?.city?.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesStatus = !statusFilter || order.status === statusFilter;
 
@@ -407,7 +411,11 @@ export default function OrderManagement() {
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Payment Method</label>
-                                    <p className="text-gray-900">{selectedOrder.order?.paymentMethod || 'N/A'}</p>
+                                    <p className="text-gray-900">
+                                        {selectedOrder.order?.paymentMethod === 'vnpay' ? 'VNPay' :
+                                            selectedOrder.order?.paymentMethod === 'cod' ? 'COD (Cash on Delivery)' :
+                                                'Not Specified'}
+                                    </p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-gray-700">Status</label>

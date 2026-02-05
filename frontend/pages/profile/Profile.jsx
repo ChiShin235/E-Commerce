@@ -18,6 +18,8 @@ export default function Profile() {
     const [orderDetails, setOrderDetails] = useState(null);
     const [showOrderModal, setShowOrderModal] = useState(false);
     const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [orderToCancel, setOrderToCancel] = useState(null);
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -155,6 +157,48 @@ export default function Profile() {
         logout();
         toast.success('Đăng xuất thành công!');
         navigate('/');
+    };
+
+    // Kiểm tra xem đơn hàng có trong 24h không
+    const canCancelOrder = (order) => {
+        if (order.status === 'cancelled' || order.status === 'shipped') {
+            return false;
+        }
+        const orderDate = new Date(order.createdAt);
+        const now = new Date();
+        const hoursSinceCreated = (now - orderDate) / (1000 * 60 * 60);
+        return hoursSinceCreated <= 24;
+    };
+
+    const handleCancelOrder = async (orderId) => {
+        setOrderToCancel(orderId);
+        setShowCancelConfirm(true);
+    };
+
+    const confirmCancelOrder = async () => {
+        if (!orderToCancel) return;
+
+        try {
+            const response = await orderAPI.cancel(orderToCancel);
+            if (response.success) {
+                toast.success('Hủy đơn hàng thành công!');
+                // Reload orders
+                const ordersResponse = await orderAPI.getMyOrders();
+                if (ordersResponse.success) {
+                    setOrders(ordersResponse.data || []);
+                }
+                // Close modal if open
+                if (showOrderModal && selectedOrder?._id === orderToCancel) {
+                    closeModal();
+                }
+            }
+        } catch (error) {
+            console.error('Cancel order error:', error);
+            toast.error(error.response?.data?.message || 'Không thể hủy đơn hàng');
+        } finally {
+            setShowCancelConfirm(false);
+            setOrderToCancel(null);
+        }
     };
 
     if (!user) {
@@ -392,9 +436,9 @@ export default function Profile() {
                                                                 Mã đơn hàng: <span className="font-semibold text-gray-900">#{order._id?.slice(-8).toUpperCase()}</span>
                                                             </p>
                                                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                                    order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                                                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                                                            'bg-yellow-100 text-yellow-800'
+                                                                order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                                                                    order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                                        'bg-yellow-100 text-yellow-800'
                                                                 }`}>
                                                                 {order.status === 'completed' ? 'Hoàn thành' :
                                                                     order.status === 'processing' ? 'Đang xử lý' :
@@ -496,16 +540,27 @@ export default function Profile() {
                                                         </div>
                                                     </div>
 
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedOrder(order);
-                                                            fetchOrderDetails(order._id);
-                                                        }}
-                                                        disabled={loadingOrderDetails}
-                                                        className="px-6 py-2.5 bg-black text-white font-semibold hover:bg-gray-800 hover:shadow-lg transition-all rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        {loadingOrderDetails ? 'Đang tải...' : 'Xem chi tiết'}
-                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedOrder(order);
+                                                                fetchOrderDetails(order._id);
+                                                            }}
+                                                            disabled={loadingOrderDetails}
+                                                            className="px-6 py-2.5 bg-black text-white font-semibold hover:bg-gray-800 hover:shadow-lg transition-all rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            {loadingOrderDetails ? 'Đang tải...' : 'Xem chi tiết'}
+                                                        </button>
+
+                                                        {canCancelOrder(order) && (
+                                                            <button
+                                                                onClick={() => handleCancelOrder(order._id)}
+                                                                className="px-6 py-2.5 bg-red-600 text-white font-semibold hover:bg-red-700 hover:shadow-lg transition-all rounded"
+                                                            >
+                                                                Hủy đơn
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -618,9 +673,9 @@ export default function Profile() {
                                     <div>
                                         <p className="text-sm text-gray-500">Trạng thái</p>
                                         <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-1 ${selectedOrder?.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                selectedOrder?.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                                    selectedOrder?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                                        'bg-yellow-100 text-yellow-800'
+                                            selectedOrder?.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                                                selectedOrder?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                    'bg-yellow-100 text-yellow-800'
                                             }`}>
                                             {selectedOrder?.status === 'completed' ? 'Hoàn thành' :
                                                 selectedOrder?.status === 'processing' ? 'Đang xử lý' :
@@ -784,13 +839,71 @@ export default function Profile() {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t flex justify-end gap-3">
+                        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t flex justify-between gap-3">
+                            <div>
+                                {selectedOrder && canCancelOrder(selectedOrder) && (
+                                    <button
+                                        onClick={() => handleCancelOrder(selectedOrder._id)}
+                                        className="px-6 py-2.5 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors rounded"
+                                    >
+                                        Hủy đơn hàng
+                                    </button>
+                                )}
+                            </div>
                             <button
                                 onClick={closeModal}
                                 className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-colors rounded"
                             >
                                 Đóng
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cancel Order Confirmation Modal */}
+            {showCancelConfirm && (
+                <div className="fixed inset-0 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => {
+                    setShowCancelConfirm(false);
+                    setOrderToCancel(null);
+                }}>
+                    <div className="bg-white rounded-lg shadow-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6">
+                            {/* Icon */}
+                            <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full">
+                                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+
+                            {/* Title */}
+                            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                                Xác nhận hủy đơn hàng
+                            </h3>
+
+                            {/* Message */}
+                            <p className="text-gray-600 text-center mb-6">
+                                Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.
+                            </p>
+
+                            {/* Buttons */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowCancelConfirm(false);
+                                        setOrderToCancel(null);
+                                    }}
+                                    className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors rounded-lg"
+                                >
+                                    Không
+                                </button>
+                                <button
+                                    onClick={confirmCancelOrder}
+                                    className="flex-1 px-6 py-3 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors rounded-lg shadow-md hover:shadow-lg"
+                                >
+                                    Có, hủy đơn
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
