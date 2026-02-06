@@ -20,6 +20,7 @@ const swaggerSpec = {
     { name: 'Categories', description: 'Category management' },
     { name: 'Reviews', description: 'Review management' },
     { name: 'Recommendations', description: 'AI recommendation management' },
+    { name: 'Chatbot', description: 'Chatbot assistant' },
     { name: 'ChatbotLogs', description: 'Chatbot log management' },
     { name: 'Carts', description: 'Cart management' },
     { name: 'CartItems', description: 'Cart item management' },
@@ -1268,6 +1269,43 @@ const swaggerSpec = {
         },
       },
     },
+    '/recommendations/generate': {
+      post: {
+        tags: ['Recommendations'],
+        summary: 'Generate recommendations with Gemini',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  userId: { type: 'string' },
+                  prompt: { type: 'string', example: 'I like casual shoes' },
+                  limit: { type: 'number', example: 6 },
+                  candidateProductIds: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { type: 'object' },
+              },
+            },
+          },
+          400: { description: 'Bad request' },
+          500: { description: 'Server error' },
+        },
+      },
+    },
     '/recommendations/{id}': {
       get: {
         tags: ['Recommendations'],
@@ -1316,6 +1354,65 @@ const swaggerSpec = {
         responses: {
           200: { description: 'OK' },
           404: { description: 'Not found' },
+        },
+      },
+    },
+    '/chatbot/chat': {
+      post: {
+        tags: ['Chatbot'],
+        summary: 'Chat with AI assistant',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['message'],
+                properties: {
+                  message: { type: 'string', example: 'Tư vấn giúp tôi giày chạy bộ' },
+                  productIds: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { type: 'object' },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          500: { description: 'Server error' },
+        },
+      },
+    },
+    '/chatbot/history': {
+      get: {
+        tags: ['Chatbot'],
+        summary: 'Get my chatbot history',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/ChatbotLog' },
+                },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          500: { description: 'Server error' },
         },
       },
     },

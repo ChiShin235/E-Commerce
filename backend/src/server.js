@@ -5,6 +5,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import aiRecommendationRoutes from "./routes/aiRecommendationRoutes.js";
 import chatbotLogRoutes from "./routes/chatbotLogRoutes.js";
+import chatbotRoutes from "./routes/chatbotRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
 import cartItemRoutes from "./routes/cartItemRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
@@ -97,10 +98,10 @@ app.use("/api/reviews", authenticateToken, requireAdmin, reviewRoutes);
 app.use(
   "/api/recommendations",
   authenticateToken,
-  requireAdmin,
   aiRecommendationRoutes,
 );
 app.use("/api/chatbot-logs", authenticateToken, requireAdmin, chatbotLogRoutes);
+app.use("/api/chatbot", authenticateToken, chatbotRoutes);
 app.use("/api/carts", authenticateToken, cartRoutes);
 app.use("/api/cart-items", authenticateToken, cartItemRoutes);
 app.use("/api/orders", authenticateToken, orderRoutes);

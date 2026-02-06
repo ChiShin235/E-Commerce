@@ -276,6 +276,17 @@ export const reportAPI = {
   },
 };
 
+export const chatbotAPI = {
+  chat: async ({ message, productIds } = {}) => {
+    const response = await api.post("/chatbot/chat", { message, productIds });
+    return response.data;
+  },
+  getHistory: async () => {
+    const response = await api.get("/chatbot/history");
+    return response.data;
+  },
+};
+
 export const userAPI = {
   getAll: async () => {
     const response = await api.get("/users");

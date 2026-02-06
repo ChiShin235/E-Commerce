@@ -2,6 +2,7 @@ import Header from '../../src/components/header/Header';
 import Navigate from '../../src/components/navigate/Navigate';
 import Card from '../../src/components/card/Card';
 import Footer from '../../src/components/footer/Footer';
+import ChatbotWidget from '../../src/components/chatbot/ChatbotWidget';
 
 export default function Homepage() {
   return (
@@ -183,6 +184,8 @@ export default function Homepage() {
 
       {/* Footer */}
       <Footer />
+
+      <ChatbotWidget />
     </div>
   );
 }
