@@ -91,6 +91,23 @@ const buildHistory = (logs) => {
   return history;
 };
 
+const pickSuggestedProducts = (responseText, products, limit = 3) => {
+  if (!responseText || !products?.length) return [];
+  const lower = responseText.toLowerCase();
+  const matches = [];
+  for (const product of products) {
+    const names = [product?.name, product?.title].filter(Boolean);
+    const hasMatch = names.some((name) =>
+      lower.includes(String(name).toLowerCase()),
+    );
+    if (hasMatch) {
+      matches.push(product);
+    }
+    if (matches.length >= limit) break;
+  }
+  return matches;
+};
+
 export const chatWithGemini = async (req, res) => {
   try {
     if (!req.userId) {
@@ -155,7 +172,10 @@ export const chatWithGemini = async (req, res) => {
       products,
     });
 
-    const suggestions = products.slice(0, 3).map((product) => ({
+    const matchedProducts = pickSuggestedProducts(responseText, products, 3);
+    const suggestionProducts =
+      matchedProducts.length > 0 ? matchedProducts : products.slice(0, 3);
+    const suggestions = suggestionProducts.map((product) => ({
       productId: product._id?.toString(),
       name: product.name,
       price: product.price,

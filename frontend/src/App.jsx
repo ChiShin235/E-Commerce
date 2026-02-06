@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ManagerRoute from './components/ManagerRoute';
 import StaffRoute from './components/StaffRoute';
+import ChatbotWidget from './components/chatbot/ChatbotWidget';
 import HomePage from '../pages/homepage/Homepage';
 import AuthPage from '../pages/auth/AuthPage';
 import NotFound from '../pages/NotFound';
@@ -126,6 +127,7 @@ function App() {
             /> */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ChatbotWidget />
         </BrowserRouter>
       </CartProvider>
     </AuthProvider>
