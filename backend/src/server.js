@@ -94,7 +94,7 @@ app.use("/api/users", authenticateToken, requireAdmin, userRoleRoutes);
 app.use("/api/users", authenticateToken, requireAdmin, userRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/reviews", authenticateToken, requireAdmin, reviewRoutes);
+app.use("/api/reviews", reviewRoutes);
 app.use(
   "/api/recommendations",
   authenticateToken,

@@ -188,6 +188,25 @@ export const vnpayAPI = {
   },
 };
 
+export const reviewAPI = {
+  getByProduct: async (productId) => {
+    const response = await api.get(`/reviews/product/${productId}`);
+    return response.data;
+  },
+  createOrUpdate: async (productId, payload) => {
+    const response = await api.post(`/reviews/product/${productId}`, payload);
+    return response.data;
+  },
+  update: async (reviewId, payload) => {
+    const response = await api.put(`/reviews/${reviewId}`, payload);
+    return response.data;
+  },
+  remove: async (reviewId) => {
+    const response = await api.delete(`/reviews/${reviewId}`);
+    return response.data;
+  },
+};
+
 export const statsAPI = {
   getDashboard: async () => {
     const response = await api.get("/stats/dashboard");
