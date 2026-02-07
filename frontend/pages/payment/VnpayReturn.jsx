@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { vnpayAPI, cartAPI } from "../../src/services/api";
+import { vnpayAPI } from "../../src/services/api";
 import { useCart } from "../../src/context/CartContext";
 import { useAuth } from "../../src/context/AuthContext";
 
@@ -20,21 +20,21 @@ const VnpayReturn = () => {
   const hasParams = paramString.length > 0;
   const { clearCart } = useCart();
   const { user, isAuthenticated } = useAuth();
-  const [state, setState] = useState({
-    loading: true,
-    error: null,
-    data: null,
-  });
-
-  useEffect(() => {
-    if (!hasParams) {
-      setState({
+  const successHandledRef = useRef(false);
+  const [state, setState] = useState(() => {
+    const hasParamsInitial = paramString.length > 0;
+    if (!hasParamsInitial) {
+      return {
         loading: false,
         error: "Thiếu tham số trả về từ VNPay.",
         data: null,
-      });
-      return;
+      };
     }
+    return { loading: true, error: null, data: null };
+  });
+
+  useEffect(() => {
+    if (!hasParams) return;
 
     let isActive = true;
     vnpayAPI
@@ -43,9 +43,8 @@ const VnpayReturn = () => {
         if (!isActive) return;
         setState({ loading: false, error: null, data });
 
-        // Nếu thanh toán thành công, xóa cart và reload từ backend
-        if (data?.isVerified && data?.isSuccess) {
-          // Xóa localStorage cart
+        if (data?.isVerified && data?.isSuccess && !successHandledRef.current) {
+          successHandledRef.current = true;
           if (isAuthenticated && user) {
             const cartKey = `cart_${user._id || user.id}`;
             localStorage.setItem(cartKey, JSON.stringify([]));
@@ -53,13 +52,8 @@ const VnpayReturn = () => {
             localStorage.setItem('cart_guest', JSON.stringify([]));
           }
 
-          // Clear cart context
           clearCart();
 
-          // Reload trang để sync lại cart từ backend (đã xóa rồi)
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
         }
       })
       .catch((error) => {
@@ -168,8 +162,8 @@ const VnpayReturn = () => {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <span className="text-sm font-medium text-gray-600">Trạng thái xác minh</span>
                     <span className={`inline-flex w-fit items-center gap-2 border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${state.data?.isVerified
-                        ? "border-black bg-black text-white"
-                        : "border-gray-300 bg-white text-gray-900"
+                      ? "border-black bg-black text-white"
+                      : "border-gray-300 bg-white text-gray-900"
                       }`}>
                       {state.data?.isVerified ? "Hợp lệ" : "Không hợp lệ"}
                     </span>

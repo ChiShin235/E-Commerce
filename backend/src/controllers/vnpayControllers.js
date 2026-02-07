@@ -19,6 +19,7 @@ import Product from "../models/Product.js";
 import Cart from "../models/Cart.js";
 import CartItem from "../models/CartItem.js";
 import OrderItem from "../models/OrderItem.js";
+import { sendOrderConfirmationEmail } from "../config/email.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -126,17 +127,14 @@ export const handleVnpayReturn = async (req, res) => {
   try {
     const verify = vnpay.verifyReturnUrl(req.query);
 
-    // Nếu xác minh thành công, cập nhật database
     if (verify.isVerified && verify.isSuccess && verify.vnp_TxnRef) {
       try {
         const order = await Order.findById(verify.vnp_TxnRef);
 
         if (order && order.status !== "completed" && order.status !== "paid") {
-          // Cập nhật trạng thái order
           order.status = "completed";
           await order.save();
 
-          // Cập nhật payment
           await Payment.findOneAndUpdate(
             { order: order._id },
             {
@@ -161,10 +159,12 @@ export const handleVnpayReturn = async (req, res) => {
           if (cart) {
             await CartItem.deleteMany({ cart: cart._id });
           }
+          sendOrderConfirmationEmail(order._id.toString()).catch((e) =>
+            console.error("[VNPay Return] Lỗi gửi email:", e.message)
+          );
         }
       } catch (dbError) {
         console.error("Error updating order in handleVnpayReturn:", dbError);
-        // Tiếp tục trả về response ngay cả khi có lỗi DB
       }
     }
 
@@ -223,7 +223,6 @@ export const handleVnpayIpn = async (req, res) => {
       { upsert: true },
     );
 
-    // Trừ stock sản phẩm
     const orderItems = await OrderItem.find({ order: order._id });
     for (const item of orderItems) {
       await Product.findByIdAndUpdate(item.product, {
@@ -231,11 +230,13 @@ export const handleVnpayIpn = async (req, res) => {
       });
     }
 
-    // Xóa giỏ hàng của user
     const cart = await Cart.findOne({ user: order.user });
     if (cart) {
       await CartItem.deleteMany({ cart: cart._id });
     }
+    sendOrderConfirmationEmail(order._id.toString()).catch((e) =>
+      console.error("[VNPay IPN] Lỗi gửi email:", e.message)
+    );
 
     return res.json(IpnSuccess);
   } catch (err) {
