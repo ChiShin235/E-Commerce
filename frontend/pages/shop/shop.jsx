@@ -93,7 +93,7 @@ export default function Shop() {
                 }
             });
         };
-    }, [products, filters, sortBy]);
+    }, [products, filters, sortBy, currentPage]);
 
     const toggleFavorite = (productId) => {
         const newFavorites = new Set(favorites);

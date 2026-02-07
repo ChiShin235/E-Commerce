@@ -48,7 +48,7 @@ export default function Card() {
                 }
             });
         };
-    }, [products]);
+    }, [products, currentPage]);
 
     const fetchProducts = async () => {
         try {

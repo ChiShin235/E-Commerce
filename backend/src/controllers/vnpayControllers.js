@@ -132,7 +132,7 @@ export const handleVnpayReturn = async (req, res) => {
         const order = await Order.findById(verify.vnp_TxnRef);
 
         if (order && order.status !== "completed" && order.status !== "paid") {
-          order.status = "completed";
+          order.status = "paid";
           await order.save();
 
           await Payment.findOneAndUpdate(
@@ -160,7 +160,7 @@ export const handleVnpayReturn = async (req, res) => {
             await CartItem.deleteMany({ cart: cart._id });
           }
           sendOrderConfirmationEmail(order._id.toString()).catch((e) =>
-            console.error("[VNPay Return] Lỗi gửi email:", e.message)
+            console.error("[VNPay Return] Lỗi gửi email:", e.message),
           );
         }
       } catch (dbError) {
@@ -209,7 +209,7 @@ export const handleVnpayIpn = async (req, res) => {
       return res.json(InpOrderAlreadyConfirmed);
     }
 
-    order.status = "completed";
+    order.status = "paid";
     await order.save();
 
     await Payment.findOneAndUpdate(
@@ -235,7 +235,7 @@ export const handleVnpayIpn = async (req, res) => {
       await CartItem.deleteMany({ cart: cart._id });
     }
     sendOrderConfirmationEmail(order._id.toString()).catch((e) =>
-      console.error("[VNPay IPN] Lỗi gửi email:", e.message)
+      console.error("[VNPay IPN] Lỗi gửi email:", e.message),
     );
 
     return res.json(IpnSuccess);

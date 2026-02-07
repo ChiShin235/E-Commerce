@@ -229,8 +229,12 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
-    // Không cho phép hủy đơn đã bị hủy hoặc đã giao hàng
-    if (order.status === "cancelled" || order.status === "shipped") {
+    // Không cho phép hủy đơn đã bị hủy, đã giao hàng hoặc đã hoàn tất
+    if (
+      order.status === "cancelled" ||
+      order.status === "shipped" ||
+      order.status === "completed"
+    ) {
       return res.status(400).json({
         success: false,
         message: `Cannot cancel order with status: ${order.status}`,
@@ -249,8 +253,8 @@ export const cancelOrder = async (req, res) => {
       });
     }
 
-    // Nếu đơn hàng đã completed (đã thanh toán), đánh dấu cần hoàn tiền
-    const needsRefund = order.status === "completed";
+    // Kiểm tra nếu đơn hàng đã thanh toán, cần hoàn tiền
+    const needsRefund = order.status === "paid";
 
     // Cập nhật status thành cancelled
     order.status = "cancelled";

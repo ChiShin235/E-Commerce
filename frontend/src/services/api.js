@@ -193,6 +193,10 @@ export const reviewAPI = {
     const response = await api.get(`/reviews/product/${productId}`);
     return response.data;
   },
+  canReview: async (productId) => {
+    const response = await api.get(`/reviews/can-review/${productId}`);
+    return response.data;
+  },
   createOrUpdate: async (productId, payload) => {
     const response = await api.post(`/reviews/product/${productId}`, payload);
     return response.data;

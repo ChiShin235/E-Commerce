@@ -159,11 +159,13 @@ export default function Profile() {
         navigate('/');
     };
 
-    // Kiểm tra xem đơn hàng có trong 24h không
+    // Kiểm tra xem đơn hàng có thể hủy không
     const canCancelOrder = (order) => {
-        if (order.status === 'cancelled' || order.status === 'shipped') {
+        // Không cho phép hủy nếu đơn hàng đã bị hủy, đang giao hoặc đã hoàn tất
+        if (order.status === 'cancelled' || order.status === 'shipped' || order.status === 'completed') {
             return false;
         }
+        // Chỉ cho phép hủy trong vòng 24 giờ
         const orderDate = new Date(order.createdAt);
         const now = new Date();
         const hoursSinceCreated = (now - orderDate) / (1000 * 60 * 60);
@@ -436,14 +438,18 @@ export default function Profile() {
                                                                 Mã đơn hàng: <span className="font-semibold text-gray-900">#{order._id?.slice(-8).toUpperCase()}</span>
                                                             </p>
                                                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                                order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                                                    order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                                                        'bg-yellow-100 text-yellow-800'
+                                                                    order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                                                                        order.status === 'paid' ? 'bg-purple-100 text-purple-800' :
+                                                                            order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                                                    'bg-gray-100 text-gray-800'
                                                                 }`}>
                                                                 {order.status === 'completed' ? 'Hoàn thành' :
-                                                                    order.status === 'processing' ? 'Đang xử lý' :
-                                                                        order.status === 'cancelled' ? 'Đã hủy' :
-                                                                            'Chờ xử lý'}
+                                                                    order.status === 'shipped' ? 'Đang giao hàng' :
+                                                                        order.status === 'paid' ? 'Đã thanh toán' :
+                                                                            order.status === 'cancelled' ? 'Đã hủy' :
+                                                                                order.status === 'pending' ? 'Chờ xử lý' :
+                                                                                    order.status}
                                                             </span>
                                                         </div>
                                                         <p className="text-sm text-gray-500">
