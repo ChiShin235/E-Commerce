@@ -14,6 +14,7 @@ import Detailcard from '../pages/Detail-card/Detailcard';
 import Cart from './components/cart/Cart';
 import Order from '../pages/order/Order';
 import Shop from '../pages/shop/shop';
+import BestSeller from '../pages/bestseller/BestSeller';
 import Profile from '../pages/profile/Profile';
 import About from '../pages/about/About';
 import Contact from '../pages/contact/contact';
@@ -40,6 +41,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<Shop />} />
+            <Route path="/bestseller" element={<BestSeller />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/product/:id" element={<Detailcard />} />

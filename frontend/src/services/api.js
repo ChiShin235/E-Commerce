@@ -34,6 +34,13 @@ export const productAPI = {
     return response.data;
   },
 
+  getBestSellers: async (limit = 20) => {
+    const response = await api.get("/products/best-sellers", {
+      params: { limit },
+    });
+    return response.data;
+  },
+
   getById: async (id) => {
     const response = await api.get(`/products/${id}`);
     return response.data;

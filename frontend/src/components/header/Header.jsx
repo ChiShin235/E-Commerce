@@ -84,6 +84,8 @@ export default function Header() {
                                             navigate('/contact');
                                         } else if (item === 'ABOUT US') {
                                             navigate('/about');
+                                        } else if (item === 'BEST SELLER') {
+                                            navigate('/bestseller');
                                         }
                                     }}
                                     className="px-3 py-2 text-sm font-medium text-gray-800 hover:text-gray-600 transition-colors duration-200"
@@ -259,6 +261,8 @@ export default function Header() {
                                             navigate('/contact');
                                         } else if (item === 'ABOUT US') {
                                             navigate('/about');
+                                        } else if (item === 'BEST SELLER') {
+                                            navigate('/bestseller');
                                         }
                                         setIsOpen(false);
                                     }}
