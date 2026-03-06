@@ -53,37 +53,37 @@ export default function Footer() {
                         <ul className="space-y-3 text-sm text-gray-300">
                             <li>
                                 <a href="#" className="hover:text-white transition-colors duration-200">
-                                    Giới thiệu
+                                    About Us
                                 </a>
                             </li>
                             <li>
                                 <a href="#" className="hover:text-white transition-colors duration-200">
-                                    Hướng dẫn mua hàng
+                                    Shopping Guide
                                 </a>
                             </li>
                             <li>
                                 <a href="#" className="hover:text-white transition-colors duration-200">
-                                    Chính sách đổi trả hàng
+                                    Return & Exchange Policy
                                 </a>
                             </li>
                             <li>
                                 <a href="#" className="hover:text-white transition-colors duration-200">
-                                    Chính sách giao - nhận
+                                    Shipping & Delivery Policy
                                 </a>
                             </li>
                             <li>
                                 <a href="#" className="hover:text-white transition-colors duration-200">
-                                    Chính sách thanh toán
+                                    Payment Policy
                                 </a>
                             </li>
                             <li>
                                 <a href="#" className="hover:text-white transition-colors duration-200">
-                                    Điều khoản sử dụng website
+                                    Terms of Use
                                 </a>
                             </li>
                             <li>
                                 <a href="#" className="hover:text-white transition-colors duration-200">
-                                    Bảo mật thông tin KH
+                                    Privacy Policy
                                 </a>
                             </li>
                         </ul>
@@ -92,16 +92,16 @@ export default function Footer() {
                     {/* Information Section */}
                     <div>
                         <h3 className="text-lg font-bold mb-6 pb-2 border-b border-gray-700">
-                            THÔNG TIN LIÊN HỆ
+                            CONTACT INFORMATION
                         </h3>
                         <div className="space-y-3 text-sm text-gray-300">
                             <p className="font-medium">- Team2</p>
-                            <p>- MST: 0123456789</p>
-                            <p className="font-medium">- ĐỊA CHỈ: 110 TRẦN HƯNG ĐẠO, PHƯƠNG 07, QUẬN 5, THÀNH PHỐ HỒ CHÍ MINH, VIỆT NAM</p>
-                            <p>- NGÀY CẤP: data</p>
+                            <p>- Tax ID: 0123456789</p>
+                            <p className="font-medium">- ADDRESS: 110 TRAN HUNG DAO, WARD 07, DISTRICT 5, HO CHI MINH CITY, VIETNAM</p>
+                            <p>- ISSUED DATE: data</p>
                             <p>- WEBSITE: </p>
                             <p className="font-medium">- FOR BUSINESS:</p>
-                            <p>gmail:</p>
+                            <p>Email:</p>
                         </div>
                     </div>
 
@@ -135,7 +135,7 @@ export default function Footer() {
             {/* Bottom Footer */}
             <div className="border-t border-gray-700">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm text-gray-400">
-                    <p>Needs Of Wisdom® All Rights Reserved...</p>
+                    <p>STYLE TWO® All Rights Reserved...</p>
                 </div>
             </div>
         </footer>
