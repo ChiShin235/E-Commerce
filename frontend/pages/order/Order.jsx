@@ -96,21 +96,21 @@ export default function Order() {
 
         // Validate form
         if (!formData.email || !formData.firstName || !formData.lastName || !formData.phone || !formData.address || !formData.district || !formData.city) {
-            toast.error('Vui lòng điền đầy đủ thông tin!');
+            toast.error('Please fill in all required fields!');
             return;
         }
 
         // Validate phone
         const phoneRegex = /^[0-9]{10,11}$/;
         if (!phoneRegex.test(formData.phone)) {
-            toast.error('Số điện thoại không hợp lệ!');
+            toast.error('Invalid phone number!');
             return;
         }
 
         // Validate email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
-            toast.error('Email không hợp lệ!');
+            toast.error('Invalid email address!');
             return;
         }
 
@@ -145,14 +145,14 @@ export default function Order() {
             const orderId = response?.order?._id || response?.order?.id;
             if (paymentMethod === 'vnpay') {
                 if (!orderId) {
-                    toast.error('Không lấy được mã đơn hàng để thanh toán VNPay.');
+                    toast.error('Could not retrieve order ID for VNPay payment.');
                     return;
                 }
 
                 const paymentResponse = await vnpayAPI.createPaymentUrl({ orderId });
                 const paymentUrl = paymentResponse?.paymentUrl;
                 if (!paymentUrl) {
-                    toast.error('Không tạo được link thanh toán VNPay.');
+                    toast.error('Could not create VNPay payment link.');
                     return;
                 }
 
@@ -161,7 +161,7 @@ export default function Order() {
                 return;
             }
 
-            toast.success('Đặt hàng thành công!');
+            toast.success('Order placed successfully!');
 
             // Xóa localStorage cart
             const cartKey = user ? `cart_${user._id || user.id}` : 'cart_guest';
@@ -171,7 +171,7 @@ export default function Order() {
             navigate('/');
         } catch (error) {
             console.error('Order creation error:', error);
-            toast.error(error.response?.data?.message || 'Đặt hàng thất bại! Vui lòng thử lại.');
+            toast.error(error.response?.data?.message || 'Order failed! Please try again.');
         } finally {
             setLoading(false);
         }
@@ -183,12 +183,12 @@ export default function Order() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">
-                    <p className="text-gray-600 text-lg mb-6">Giỏ hàng của bạn đang trống</p>
+                    <p className="text-gray-600 text-lg mb-6">Your cart is empty</p>
                     <button
                         onClick={() => navigate('/')}
                         className="bg-black text-white px-8 py-3 font-bold hover:bg-gray-800 transition-colors"
                     >
-                        Quay về trang chủ
+                        Back to Home
                     </button>
                 </div>
             </div>
@@ -204,11 +204,11 @@ export default function Order() {
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold mb-2">FASHION LAB</h1>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <span className="cursor-pointer hover:text-gray-700" onClick={() => navigate('/cart')}>GIỎ HÀNG</span>
+                        <span className="cursor-pointer hover:text-gray-700" onClick={() => navigate('/cart')}>CART</span>
                         <span>&gt;</span>
-                        <span className="font-medium text-gray-900">THÔNG TIN</span>
+                        <span className="font-medium text-gray-900">INFORMATION</span>
                         <span>&gt;</span>
-                        <span>VẬN CHUYỂN</span>
+                        <span>SHIPPING</span>
                     </div>
                 </div>
 
@@ -218,13 +218,13 @@ export default function Order() {
                         <div>
                             {/* Customer Information */}
                             <div className="mb-8">
-                                <h2 className="text-lg font-semibold mb-4">Thông tin khách hàng</h2>
+                                <h2 className="text-lg font-semibold mb-4">Customer Information</h2>
                                 <input
                                     type="email"
                                     name="email"
                                     value={formData.email}
                                     onChange={handleInputChange}
-                                    placeholder="Email nhận thông báo"
+                                    placeholder="Email for order notifications"
                                     className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                     required
                                 />
@@ -232,7 +232,7 @@ export default function Order() {
 
                             {/* Shipping Address */}
                             <div>
-                                <h2 className="text-lg font-semibold mb-4">Địa chỉ nhận hàng</h2>
+                                <h2 className="text-lg font-semibold mb-4">Shipping Address</h2>
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <input
@@ -240,7 +240,7 @@ export default function Order() {
                                             name="firstName"
                                             value={formData.firstName}
                                             onChange={handleInputChange}
-                                            placeholder="Họ"
+                                            placeholder="First Name"
                                             className="px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                             required
                                         />
@@ -249,7 +249,7 @@ export default function Order() {
                                             name="lastName"
                                             value={formData.lastName}
                                             onChange={handleInputChange}
-                                            placeholder="Tên"
+                                            placeholder="Last Name"
                                             className="px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                             required
                                         />
@@ -260,7 +260,7 @@ export default function Order() {
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleInputChange}
-                                        placeholder="Số điện thoại"
+                                        placeholder="Phone Number"
                                         className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                         required
                                     />
@@ -270,7 +270,7 @@ export default function Order() {
                                         name="address"
                                         value={formData.address}
                                         onChange={handleInputChange}
-                                        placeholder="Địa chỉ (Số nhà, tên đường...)"
+                                        placeholder="Street address (house number, street name...)"
                                         className="w-full px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                         required
                                     />
@@ -281,7 +281,7 @@ export default function Order() {
                                             name="district"
                                             value={formData.district}
                                             onChange={handleInputChange}
-                                            placeholder="Quận/Huyện"
+                                            placeholder="District"
                                             className="px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                             required
                                         />
@@ -290,7 +290,7 @@ export default function Order() {
                                             name="city"
                                             value={formData.city}
                                             onChange={handleInputChange}
-                                            placeholder="Thành phố"
+                                            placeholder="City"
                                             className="px-4 py-3 border border-gray-300 focus:outline-none focus:border-gray-500 transition-colors"
                                             required
                                         />
@@ -300,7 +300,7 @@ export default function Order() {
 
                             {/* Payment Method */}
                             <div className="mt-6">
-                                <h2 className="text-lg font-semibold mb-4">Phương thức thanh toán</h2>
+                                <h2 className="text-lg font-semibold mb-4">Payment Method</h2>
                                 <div className="space-y-3">
                                     {/* COD */}
                                     <label className="flex items-center gap-3 p-4 border-2 cursor-pointer transition-colors ${
@@ -315,8 +315,8 @@ export default function Order() {
                                             className="w-5 h-5 text-black focus:ring-black"
                                         />
                                         <div className="flex-1">
-                                            <p className="font-medium">Thanh toán khi nhận hàng (COD)</p>
-                                            <p className="text-sm text-gray-500 mt-1">Thanh toán bằng tiền mặt khi nhận hàng</p>
+                                            <p className="font-medium">Cash on Delivery (COD)</p>
+                                            <p className="text-sm text-gray-500 mt-1">Pay in cash upon delivery</p>
                                         </div>
                                         <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
@@ -337,8 +337,8 @@ export default function Order() {
                                             className="w-5 h-5 text-black focus:ring-black"
                                         />
                                         <div className="flex-1">
-                                            <p className="font-medium">Thanh toán qua VNPay</p>
-                                            <p className="text-sm text-gray-500 mt-1">Thanh toán qua cổng VNPay (ATM, Visa, MasterCard)</p>
+                                            <p className="font-medium">Pay via VNPay</p>
+                                            <p className="text-sm text-gray-500 mt-1">Online payment via VNPay (ATM, Visa, MasterCard)</p>
                                         </div>
                                         <img
                                             src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png"
@@ -355,7 +355,7 @@ export default function Order() {
                                 disabled={loading}
                                 className="w-full mt-8 bg-black text-white py-4 font-bold hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'ĐANG XỬ LÝ...' : 'HOÀN TẤT ĐẶT HÀNG'}
+                                {loading ? 'PROCESSING...' : 'PLACE ORDER'}
                             </button>
                         </div>
 
@@ -402,15 +402,15 @@ export default function Order() {
                             {/* Summary */}
                             <div className="border-t border-gray-200 pt-4 space-y-3">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Tạm tính</span>
+                                    <span className="text-gray-600">Subtotal</span>
                                     <span className="font-medium">{formatPrice(subtotal)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-gray-600">Vận chuyển</span>
-                                    <span className="font-medium">Miễn phí</span>
+                                    <span className="text-gray-600">Shipping</span>
+                                    <span className="font-medium">Free</span>
                                 </div>
                                 <div className="border-t border-gray-200 pt-3 flex justify-between">
-                                    <span className="font-bold text-lg">TỔNG CỘNG</span>
+                                    <span className="font-bold text-lg">TOTAL</span>
                                     <span className="font-bold text-lg">{formatPrice(total)}</span>
                                 </div>
                             </div>

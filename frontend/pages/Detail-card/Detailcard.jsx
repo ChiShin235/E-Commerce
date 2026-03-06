@@ -41,7 +41,7 @@ export default function Detailcard() {
             setProduct(data.data || data);
         } catch (err) {
             console.error('Error fetching product:', err);
-            toast.error('Không thể tải sản phẩm');
+            toast.error('Failed to load product');
             setProduct(null);
         } finally {
             setLoading(false);
@@ -56,7 +56,7 @@ export default function Detailcard() {
             setReviews(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error('Error fetching reviews:', err);
-            setReviewsError('Không thể tải đánh giá');
+            setReviewsError('Failed to load reviews');
         } finally {
             setReviewsLoading(false);
         }
@@ -118,17 +118,17 @@ export default function Detailcard() {
             return;
         }
         if (!rating) {
-            toast.error('Vui lòng chọn số sao đánh giá');
+            toast.error('Please select a star rating');
             return;
         }
         try {
             setIsSubmittingReview(true);
             await reviewAPI.createOrUpdate(id, { rating, comment });
-            toast.success(myReview ? 'Cập nhật đánh giá thành công' : 'Đánh giá thành công');
+            toast.success(myReview ? 'Review updated successfully' : 'Review submitted successfully');
             await Promise.all([fetchReviews(), fetchProduct()]);
         } catch (err) {
             console.error('Error submitting review:', err);
-            const errorMessage = err.response?.data?.message || 'Không thể gửi đánh giá';
+            const errorMessage = err.response?.data?.message || 'Failed to submit review';
             toast.error(errorMessage);
         } finally {
             setIsSubmittingReview(false);
@@ -323,7 +323,7 @@ export default function Detailcard() {
                                 <div className="text-sm text-red-500">{reviewsError}</div>
                             )}
                             {!reviewsLoading && !reviewsError && reviews.length === 0 && (
-                                <div className="text-sm text-gray-500">Chưa có đánh giá nào.</div>
+                                <div className="text-sm text-gray-500">No reviews yet.</div>
                             )}
 
                             <div className="space-y-6">
@@ -359,19 +359,19 @@ export default function Detailcard() {
                         {/* Review Form */}
                         <div className="border rounded-lg p-5 h-fit">
                             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                                {myReview ? 'Cập nhật đánh giá' : 'Viết đánh giá'}
+                                {myReview ? 'Update Review' : 'Write a Review'}
                             </h3>
 
                             {!isAuthenticated ? (
                                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                     <p className="text-sm text-yellow-800">
-                                        Bạn cần đăng nhập để đánh giá sản phẩm.
+                                        You need to log in to review this product.
                                     </p>
                                     <button
                                         onClick={() => navigate('/login')}
                                         className="mt-3 text-sm font-medium text-yellow-900 hover:underline"
                                     >
-                                        Đăng nhập ngay →
+                                        Log in now →
                                     </button>
                                 </div>
                             ) : canReview === false ? (
@@ -409,7 +409,7 @@ export default function Detailcard() {
                                     <textarea
                                         value={comment}
                                         onChange={(e) => setComment(e.target.value)}
-                                        placeholder="Chia sẻ cảm nhận về sản phẩm..."
+                                        placeholder="Share your thoughts about this product..."
                                         rows={4}
                                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black/20"
                                     />
@@ -418,7 +418,7 @@ export default function Detailcard() {
                                         disabled={isSubmittingReview}
                                         className="mt-4 w-full rounded-lg bg-black py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:bg-gray-400"
                                     >
-                                        {isSubmittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+                                        {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
                                     </button>
                                 </>
                             )}

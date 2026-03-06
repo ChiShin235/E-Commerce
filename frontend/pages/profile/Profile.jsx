@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../src/context/AuthContext';
 import { authAPI, orderAPI } from '../../src/services/api';
 import { toast } from 'sonner';
@@ -8,8 +8,9 @@ import Footer from '../../src/components/footer/Footer';
 
 export default function Profile() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { user, logout, updateUser } = useAuth();
-    const [activeTab, setActiveTab] = useState('profile'); // profile, orders, settings
+    const [activeTab, setActiveTab] = useState(() => searchParams.get('tab') || 'profile');
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [orders, setOrders] = useState([]);
@@ -20,6 +21,7 @@ export default function Profile() {
     const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
     const [orderToCancel, setOrderToCancel] = useState(null);
+    const [orderSubTab, setOrderSubTab] = useState('active'); // active | history
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -36,7 +38,7 @@ export default function Profile() {
                 username: user.username || '',
                 email: user.email || '',
                 phone: user.phone || '',
-                address: user.address || '',
+                address: typeof user.address === 'string' ? user.address : '',
                 currentPassword: '',
                 newPassword: '',
                 confirmPassword: '',
@@ -56,7 +58,7 @@ export default function Profile() {
                     }
                 } catch (error) {
                     console.error('Fetch orders error:', error);
-                    toast.error('Không thể tải danh sách đơn hàng');
+                    toast.error('Failed to load orders');
                 } finally {
                     setLoadingOrders(false);
                 }
@@ -75,7 +77,7 @@ export default function Profile() {
             setShowOrderModal(true);
         } catch (error) {
             console.error('Fetch order details error:', error);
-            toast.error('Không thể tải chi tiết đơn hàng');
+            toast.error('Failed to load order details');
         } finally {
             setLoadingOrderDetails(false);
         }
@@ -109,11 +111,11 @@ export default function Profile() {
             await authAPI.updateProfile(updateData);
             // Refresh user data from server
             await updateUser();
-            toast.success('Cập nhật thông tin thành công!');
+            toast.success('Profile updated successfully!');
             setIsEditing(false);
         } catch (error) {
             console.error('Update profile error:', error);
-            toast.error(error.response?.data?.message || 'Cập nhật thất bại!');
+            toast.error(error.response?.data?.message || 'Update failed!');
         } finally {
             setLoading(false);
         }
@@ -123,12 +125,12 @@ export default function Profile() {
         e.preventDefault();
 
         if (formData.newPassword !== formData.confirmPassword) {
-            toast.error('Mật khẩu xác nhận không khớp!');
+            toast.error('Passwords do not match!');
             return;
         }
 
         if (formData.newPassword.length < 6) {
-            toast.error('Mật khẩu mới phải có ít nhất 6 ký tự!');
+            toast.error('New password must be at least 6 characters!');
             return;
         }
 
@@ -138,7 +140,7 @@ export default function Profile() {
                 currentPassword: formData.currentPassword,
                 newPassword: formData.newPassword,
             });
-            toast.success('Đổi mật khẩu thành công!');
+            toast.success('Password changed successfully!');
             setFormData({
                 ...formData,
                 currentPassword: '',
@@ -147,7 +149,7 @@ export default function Profile() {
             });
         } catch (error) {
             console.error('Change password error:', error);
-            toast.error(error.response?.data?.message || 'Đổi mật khẩu thất bại!');
+            toast.error(error.response?.data?.message || 'Failed to change password!');
         } finally {
             setLoading(false);
         }
@@ -155,17 +157,17 @@ export default function Profile() {
 
     const handleLogout = () => {
         logout();
-        toast.success('Đăng xuất thành công!');
+        toast.success('Logged out successfully!');
         navigate('/');
     };
 
-    // Kiểm tra xem đơn hàng có thể hủy không
+    // Check whether an order can be cancelled
     const canCancelOrder = (order) => {
-        // Không cho phép hủy nếu đơn hàng đã bị hủy, đang giao hoặc đã hoàn tất
+        // Not allowed if order is already cancelled, shipping, delivered, or completed
         if (order.status === 'cancelled' || order.status === 'shipping' || order.status === 'delivered' || order.status === 'completed') {
             return false;
         }
-        // Chỉ cho phép hủy trong vòng 24 giờ
+        // Only allowed within 24 hours of placing
         const orderDate = new Date(order.createdAt);
         const now = new Date();
         const hoursSinceCreated = (now - orderDate) / (1000 * 60 * 60);
@@ -183,7 +185,7 @@ export default function Profile() {
         try {
             const response = await orderAPI.cancel(orderToCancel);
             if (response.success) {
-                toast.success('Hủy đơn hàng thành công!');
+                toast.success('Order cancelled successfully!');
                 // Reload orders
                 const ordersResponse = await orderAPI.getMyOrders();
                 if (ordersResponse.success) {
@@ -196,7 +198,7 @@ export default function Profile() {
             }
         } catch (error) {
             console.error('Cancel order error:', error);
-            toast.error(error.response?.data?.message || 'Không thể hủy đơn hàng');
+            toast.error(error.response?.data?.message || 'Failed to cancel order');
         } finally {
             setShowCancelConfirm(false);
             setOrderToCancel(null);
@@ -207,7 +209,7 @@ export default function Profile() {
         try {
             const response = await orderAPI.confirmReceived(orderId);
             if (response.success) {
-                toast.success('Đã xác nhận nhận hàng thành công!');
+                toast.success('Order received confirmed successfully!');
                 const ordersResponse = await orderAPI.getMyOrders();
                 if (ordersResponse.success) {
                     setOrders(ordersResponse.data || []);
@@ -215,7 +217,7 @@ export default function Profile() {
             }
         } catch (error) {
             console.error('Confirm received error:', error);
-            toast.error(error.response?.data?.message || 'Không thể xác nhận nhận hàng');
+            toast.error(error.response?.data?.message || 'Failed to confirm order received');
         }
     };
 
@@ -223,12 +225,12 @@ export default function Profile() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">
-                    <p className="text-gray-600 text-lg mb-6">Vui lòng đăng nhập để xem trang này</p>
+                    <p className="text-gray-600 text-lg mb-6">Please log in to view this page</p>
                     <button
                         onClick={() => navigate('/login')}
                         className="bg-black text-white px-8 py-3 font-bold hover:bg-gray-800 transition-colors"
                     >
-                        Đăng nhập
+                        Log In
                     </button>
                 </div>
             </div>
@@ -256,7 +258,7 @@ export default function Profile() {
                             <p className="text-gray-600">{user.email}</p>
                             <div className="flex gap-4 mt-4">
                                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-black text-white">
-                                    {user.role === 'admin' ? 'Quản trị viên' : 'Khách hàng'}
+                                    {user.role === 'admin' ? 'Administrator' : 'Customer'}
                                 </span>
                             </div>
                         </div>
@@ -266,7 +268,7 @@ export default function Profile() {
                             onClick={handleLogout}
                             className="px-6 py-2 border-2 border-red-600 text-red-600 font-semibold hover:bg-red-600 hover:text-white transition-colors rounded"
                         >
-                            Đăng xuất
+                            Log Out
                         </button>
                     </div>
                 </div>
@@ -282,7 +284,7 @@ export default function Profile() {
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
                             >
-                                Thông tin cá nhân
+                                Personal Information
                             </button>
                             <button
                                 onClick={() => setActiveTab('orders')}
@@ -291,7 +293,7 @@ export default function Profile() {
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
                             >
-                                Đơn hàng của tôi
+                                My Orders
                             </button>
                             <button
                                 onClick={() => setActiveTab('settings')}
@@ -300,7 +302,7 @@ export default function Profile() {
                                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
                             >
-                                Cài đặt
+                                Settings
                             </button>
                         </nav>
                     </div>
@@ -311,13 +313,13 @@ export default function Profile() {
                         {activeTab === 'profile' && (
                             <div>
                                 <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-2xl font-bold text-gray-900">Thông tin cá nhân</h2>
+                                    <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
                                     {!isEditing && (
                                         <button
                                             onClick={() => setIsEditing(true)}
                                             className="px-6 py-2 bg-black text-white font-semibold hover:bg-gray-800 transition-colors rounded"
                                         >
-                                            Chỉnh sửa
+                                            Edit
                                         </button>
                                     )}
                                 </div>
@@ -327,7 +329,7 @@ export default function Profile() {
                                         {/* Username */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Tên người dùng
+                                                Username
                                             </label>
                                             <input
                                                 type="text"
@@ -351,13 +353,13 @@ export default function Profile() {
                                                 disabled
                                                 className="w-full px-4 py-3 border border-gray-300 rounded bg-gray-100 text-gray-600 cursor-not-allowed"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">Email không thể thay đổi</p>
+                                            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                                         </div>
 
                                         {/* Phone */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Số điện thoại
+                                                Phone Number
                                             </label>
                                             <input
                                                 type="tel"
@@ -372,7 +374,7 @@ export default function Profile() {
                                         {/* Address */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Địa chỉ
+                                                Address
                                             </label>
                                             <input
                                                 type="text"
@@ -392,14 +394,14 @@ export default function Profile() {
                                                 disabled={loading}
                                                 className="px-8 py-3 bg-black text-white font-semibold hover:bg-gray-800 transition-colors rounded disabled:bg-gray-400"
                                             >
-                                                {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                                                {loading ? 'Saving...' : 'Save Changes'}
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setIsEditing(false)}
                                                 className="px-8 py-3 border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors rounded"
                                             >
-                                                Hủy
+                                                Cancel
                                             </button>
                                         </div>
                                     )}
@@ -410,208 +412,248 @@ export default function Profile() {
                         {/* Orders Tab */}
                         {activeTab === 'orders' && (
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Đơn hàng của tôi</h2>
-                                {loadingOrders ? (
-                                    <div className="text-center py-12">
-                                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-                                        <p className="mt-4 text-gray-600">Đang tải đơn hàng...</p>
+                                <div className="flex justify-between items-center mb-6">
+                                    <h2 className="text-2xl font-bold text-gray-900">My Orders</h2>
+                                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                                        <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
+                                        {orders.filter(o => ['pending', 'paid', 'shipping', 'delivered'].includes(o.status)).length} in progress
                                     </div>
-                                ) : orders.length === 0 ? (
-                                    <div className="text-center py-12">
-                                        <svg
-                                            className="w-24 h-24 text-gray-300 mx-auto mb-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                                            />
-                                        </svg>
-                                        <p className="text-gray-500 text-lg">Bạn chưa có đơn hàng nào</p>
-                                        <button
-                                            onClick={() => navigate('/shop')}
-                                            className="mt-6 px-8 py-3 bg-black text-white font-semibold hover:bg-gray-800 transition-colors rounded"
-                                        >
-                                            Mua sắm ngay
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        {orders.map((order) => (
-                                            <div
-                                                key={order._id}
-                                                className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white"
-                                            >
-                                                {/* Header */}
-                                                <div className="flex justify-between items-start mb-4 pb-4 border-b">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-3 mb-2">
-                                                            <p className="text-sm text-gray-500">
-                                                                Mã đơn hàng: <span className="font-semibold text-gray-900">#{order._id?.slice(-8).toUpperCase()}</span>
-                                                            </p>
-                                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                                order.status === 'shipping' ? 'bg-blue-100 text-blue-800' :
-                                                                    order.status === 'delivered' ? 'bg-teal-100 text-teal-800' :
-                                                                        order.status === 'paid' ? 'bg-purple-100 text-purple-800' :
-                                                                            order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                                                                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                                                    'bg-gray-100 text-gray-800'
-                                                                }`}>
-                                                                {order.status === 'completed' ? 'Hoàn thành' :
-                                                                    order.status === 'shipping' ? 'Đang giao hàng' :
-                                                                        order.status === 'delivered' ? 'Giao hàng thành công' :
-                                                                            order.status === 'paid' ? 'Đã thanh toán' :
-                                                                                order.status === 'cancelled' ? 'Đã hủy' :
-                                                                                    order.status === 'pending' ? 'Chờ xử lý' :
-                                                                                        order.status}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-sm text-gray-500">
-                                                            <svg className="inline w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                            </svg>
-                                                            Ngày đặt: {new Date(order.createdAt).toLocaleString('vi-VN', {
-                                                                year: 'numeric',
-                                                                month: '2-digit',
-                                                                day: '2-digit',
-                                                                hour: '2-digit',
-                                                                minute: '2-digit'
-                                                            })}
-                                                        </p>
-                                                    </div>
-                                                </div>
+                                </div>
 
-                                                {/* Chi tiết đơn hàng */}
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                                    {/* Phương thức thanh toán */}
-                                                    <div className="flex items-start gap-2">
-                                                        <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                        </svg>
+                                {/* Sub-tabs */}
+                                <div className="flex border-b border-gray-200 mb-6">
+                                    <button
+                                        onClick={() => setOrderSubTab('active')}
+                                        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${orderSubTab === 'active'
+                                            ? 'border-black text-black'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                            }`}
+                                    >
+                                        In Progress
+                                        {orders.filter(o => ['pending', 'paid', 'shipping', 'delivered'].includes(o.status)).length > 0 && (
+                                            <span className="ml-2 px-2 py-0.5 bg-black text-white text-xs rounded-full">
+                                                {orders.filter(o => ['pending', 'paid', 'shipping', 'delivered'].includes(o.status)).length}
+                                            </span>
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={() => setOrderSubTab('history')}
+                                        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${orderSubTab === 'history'
+                                            ? 'border-black text-black'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                                            }`}
+                                    >
+                                        Order History
+                                        {orders.filter(o => ['completed', 'cancelled'].includes(o.status)).length > 0 && (
+                                            <span className="ml-2 px-2 py-0.5 bg-gray-500 text-white text-xs rounded-full">
+                                                {orders.filter(o => ['completed', 'cancelled'].includes(o.status)).length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
+
+                                {(() => {
+                                    const filteredOrders = orderSubTab === 'active'
+                                        ? orders.filter(o => ['pending', 'paid', 'shipping', 'delivered'].includes(o.status))
+                                        : orders.filter(o => ['completed', 'cancelled'].includes(o.status));
+
+                                    if (loadingOrders) return (
+                                        <div className="text-center py-12">
+                                            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
+                                            <p className="mt-4 text-gray-600">Loading orders...</p>
+                                        </div>
+                                    );
+
+                                    if (filteredOrders.length === 0) return (
+                                        <div className="text-center py-12">
+                                            <svg className="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                            </svg>
+                                            <p className="text-gray-500 text-lg">
+                                                {orderSubTab === 'active' ? 'No orders in progress' : 'No order history yet'}
+                                            </p>
+                                            {orderSubTab === 'active' && (
+                                                <button onClick={() => navigate('/shop')} className="mt-6 px-8 py-3 bg-black text-white font-semibold hover:bg-gray-800 transition-colors rounded">
+                                                    Shop Now
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+
+                                    return (
+                                        <div className="space-y-4">
+                                            {filteredOrders.map((order) => (
+                                                <div
+                                                    key={order._id}
+                                                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow bg-white"
+                                                >
+                                                    {/* Header */}
+                                                    <div className="flex justify-between items-start mb-4 pb-4 border-b">
                                                         <div className="flex-1">
-                                                            <p className="text-xs text-gray-500">Thanh toán</p>
-                                                            <p className="text-sm font-medium text-gray-900">
-                                                                {order.paymentMethod === 'vnpay' ? 'VNPay' :
-                                                                    order.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' :
-                                                                        order.paymentMethod || 'Chưa xác định'}
+                                                            <div className="flex items-center gap-3 mb-2">
+                                                                <p className="text-sm text-gray-500">
+                                                                    Order ID: <span className="font-semibold text-gray-900">#{order._id?.slice(-8).toUpperCase()}</span>
+                                                                </p>
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                                    order.status === 'shipping' ? 'bg-blue-100 text-blue-800' :
+                                                                        order.status === 'delivered' ? 'bg-teal-100 text-teal-800' :
+                                                                            order.status === 'paid' ? 'bg-purple-100 text-purple-800' :
+                                                                                order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                                                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                                                        'bg-gray-100 text-gray-800'
+                                                                    }`}>
+                                                                    {order.status === 'completed' ? 'Completed' :
+                                                                        order.status === 'shipping' ? 'Shipping' :
+                                                                            order.status === 'delivered' ? 'Delivered' :
+                                                                                order.status === 'paid' ? 'Paid' :
+                                                                                    order.status === 'cancelled' ? 'Cancelled' :
+                                                                                        order.status === 'pending' ? 'Pending' :
+                                                                                            order.status}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-500">
+                                                                <svg className="inline w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                </svg>
+                                                                Order date: {new Date(order.createdAt).toLocaleString('en-US', {
+                                                                    year: 'numeric',
+                                                                    month: '2-digit',
+                                                                    day: '2-digit',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    {/* Email */}
-                                                    {order.email && (
+                                                    {/* Order details */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                                        {/* Payment method */}
                                                         <div className="flex items-start gap-2">
                                                             <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                                                             </svg>
                                                             <div className="flex-1">
-                                                                <p className="text-xs text-gray-500">Email</p>
-                                                                <p className="text-sm font-medium text-gray-900 truncate">{order.email}</p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-
-                                                    {/* Địa chỉ */}
-                                                    {order.shippingAddress && (
-                                                        <div className="flex items-start gap-2">
-                                                            <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            </svg>
-                                                            <div className="flex-1">
-                                                                <p className="text-xs text-gray-500">Địa chỉ giao hàng</p>
-                                                                <p className="text-sm font-medium text-gray-900 line-clamp-2">
-                                                                    {typeof order.shippingAddress === 'string'
-                                                                        ? order.shippingAddress
-                                                                        : `${order.shippingAddress.address || ''}, ${order.shippingAddress.district || ''}, ${order.shippingAddress.city || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',')}
+                                                                <p className="text-xs text-gray-500">Payment</p>
+                                                                <p className="text-sm font-medium text-gray-900">
+                                                                    {order.paymentMethod === 'vnpay' ? 'VNPay' :
+                                                                        order.paymentMethod === 'cod' ? 'Cash on Delivery' :
+                                                                            order.paymentMethod || 'Not specified'}
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                    )}
-                                                </div>
 
-                                                {/* Tổng tiền và actions */}
-                                                <div className="border-t pt-4 flex justify-between items-center">
-                                                    <div className="flex gap-8">
-                                                        {/* Tổng tiền hàng */}
-                                                        <div>
-                                                            <p className="text-xs text-gray-500 mb-1">Tiền hàng</p>
-                                                            <p className="text-lg font-semibold text-gray-900">
-                                                                {order.totalAmount?.toLocaleString('vi-VN')}₫
-                                                            </p>
-                                                        </div>
+                                                        {/* Email */}
+                                                        {order.email && (
+                                                            <div className="flex items-start gap-2">
+                                                                <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                                </svg>
+                                                                <div className="flex-1">
+                                                                    <p className="text-xs text-gray-500">Email</p>
+                                                                    <p className="text-sm font-medium text-gray-900 truncate">{order.email}</p>
+                                                                </div>
+                                                            </div>
+                                                        )}
 
-                                                        {/* Phí vận chuyển */}
-                                                        {order.shippingFee > 0 && (
+                                                        {/* Address */}
+                                                        {order.shippingAddress && (
+                                                            <div className="flex items-start gap-2">
+                                                                <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                </svg>
+                                                                <div className="flex-1">
+                                                                    <p className="text-xs text-gray-500">Shipping Address</p>
+                                                                    <p className="text-sm font-medium text-gray-900 line-clamp-2">
+                                                                        {typeof order.shippingAddress === 'string'
+                                                                            ? order.shippingAddress
+                                                                            : `${order.shippingAddress.address || ''}, ${order.shippingAddress.district || ''}, ${order.shippingAddress.city || ''}`.replace(/^,\s*|,\s*$/g, '').replace(/,\s*,/g, ',')}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Totals and actions */}
+                                                    <div className="border-t pt-4 flex justify-between items-center">
+                                                        <div className="flex gap-8">
+                                                            {/* Subtotal */}
                                                             <div>
-                                                                <p className="text-xs text-gray-500 mb-1">Phí vận chuyển</p>
-                                                                <p className="text-lg font-semibold text-blue-600">
-                                                                    +{order.shippingFee?.toLocaleString('vi-VN')}₫
+                                                                <p className="text-xs text-gray-500 mb-1">Subtotal</p>
+                                                                <p className="text-lg font-semibold text-gray-900">
+                                                                    {order.totalAmount?.toLocaleString('vi-VN')}₫
                                                                 </p>
                                                             </div>
-                                                        )}
 
-                                                        {/* Tổng thanh toán */}
-                                                        <div className="border-l pl-8">
-                                                            <p className="text-xs text-gray-500 mb-1">Tổng thanh toán</p>
-                                                            <p className="text-2xl font-bold text-red-600">
-                                                                {((order.totalAmount || 0) + (order.shippingFee || 0)).toLocaleString('vi-VN')}₫
-                                                            </p>
+                                                            {/* Shipping fee */}
+                                                            {order.shippingFee > 0 && (
+                                                                <div>
+                                                                    <p className="text-xs text-gray-500 mb-1">Shipping Fee</p>
+                                                                    <p className="text-lg font-semibold text-blue-600">
+                                                                        +{order.shippingFee?.toLocaleString('vi-VN')}₫
+                                                                    </p>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Total */}
+                                                            <div className="border-l pl-8">
+                                                                <p className="text-xs text-gray-500 mb-1">Total</p>
+                                                                <p className="text-2xl font-bold text-red-600">
+                                                                    {((order.totalAmount || 0) + (order.shippingFee || 0)).toLocaleString('vi-VN')}₫
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedOrder(order);
+                                                                    fetchOrderDetails(order._id);
+                                                                }}
+                                                                disabled={loadingOrderDetails}
+                                                                className="px-6 py-2.5 bg-black text-white font-semibold hover:bg-gray-800 hover:shadow-lg transition-all rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            >
+                                                                {loadingOrderDetails ? 'Loading...' : 'View Details'}
+                                                            </button>
+
+                                                            {order.status === 'delivered' && (
+                                                                <button
+                                                                    onClick={() => handleConfirmReceived(order._id)}
+                                                                    className="px-6 py-2.5 bg-teal-600 text-white font-semibold hover:bg-teal-700 hover:shadow-lg transition-all rounded"
+                                                                >
+                                                                    ✅ Order Received
+                                                                </button>
+                                                            )}
+
+                                                            {canCancelOrder(order) && (
+                                                                <button
+                                                                    onClick={() => handleCancelOrder(order._id)}
+                                                                    className="px-6 py-2.5 bg-red-600 text-white font-semibold hover:bg-red-700 hover:shadow-lg transition-all rounded"
+                                                                >
+                                                                    Cancel Order
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     </div>
-
-                                                    <div className="flex gap-2">
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedOrder(order);
-                                                                fetchOrderDetails(order._id);
-                                                            }}
-                                                            disabled={loadingOrderDetails}
-                                                            className="px-6 py-2.5 bg-black text-white font-semibold hover:bg-gray-800 hover:shadow-lg transition-all rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        >
-                                                            {loadingOrderDetails ? 'Đang tải...' : 'Xem chi tiết'}
-                                                        </button>
-
-                                                        {order.status === 'delivered' && (
-                                                            <button
-                                                                onClick={() => handleConfirmReceived(order._id)}
-                                                                className="px-6 py-2.5 bg-teal-600 text-white font-semibold hover:bg-teal-700 hover:shadow-lg transition-all rounded"
-                                                            >
-                                                                ✅ Đã nhận hàng
-                                                            </button>
-                                                        )}
-
-                                                        {canCancelOrder(order) && (
-                                                            <button
-                                                                onClick={() => handleCancelOrder(order._id)}
-                                                                className="px-6 py-2.5 bg-red-600 text-white font-semibold hover:bg-red-700 hover:shadow-lg transition-all rounded"
-                                                            >
-                                                                Hủy đơn
-                                                            </button>
-                                                        )}
-                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         )}
 
                         {/* Settings Tab */}
                         {activeTab === 'settings' && (
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Đổi mật khẩu</h2>
+                                <h2 className="text-2xl font-bold text-gray-900 mb-6">Change Password</h2>
                                 <form onSubmit={handleChangePassword} className="max-w-xl">
                                     <div className="space-y-6">
                                         {/* Current Password */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Mật khẩu hiện tại
+                                                Current Password
                                             </label>
                                             <input
                                                 type="password"
@@ -626,7 +668,7 @@ export default function Profile() {
                                         {/* New Password */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Mật khẩu mới
+                                                New Password
                                             </label>
                                             <input
                                                 type="password"
@@ -641,7 +683,7 @@ export default function Profile() {
                                         {/* Confirm Password */}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Xác nhận mật khẩu mới
+                                                Confirm New Password
                                             </label>
                                             <input
                                                 type="password"
@@ -659,7 +701,7 @@ export default function Profile() {
                                         disabled={loading}
                                         className="mt-6 px-8 py-3 bg-black text-white font-semibold hover:bg-gray-800 transition-colors rounded disabled:bg-gray-400"
                                     >
-                                        {loading ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
+                                        {loading ? 'Updating...' : 'Change Password'}
                                     </button>
                                 </form>
                             </div>
@@ -677,9 +719,9 @@ export default function Profile() {
                         {/* Modal Header */}
                         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
                             <div>
-                                <h3 className="text-2xl font-bold text-gray-900">Chi tiết đơn hàng</h3>
+                                <h3 className="text-2xl font-bold text-gray-900">Order Details</h3>
                                 <p className="text-sm text-gray-500 mt-1">
-                                    Mã đơn: #{selectedOrder?._id?.slice(-8).toUpperCase()}
+                                    Order ID: #{selectedOrder?._id?.slice(-8).toUpperCase()}
                                 </p>
                             </div>
                             <button
@@ -704,20 +746,20 @@ export default function Profile() {
                                         </svg>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-500">Trạng thái</p>
+                                        <p className="text-sm text-gray-500">Status</p>
                                         <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-1 ${selectedOrder?.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                selectedOrder?.status === 'delivered' ? 'bg-teal-100 text-teal-800' :
-                                                    selectedOrder?.status === 'shipping' ? 'bg-purple-100 text-purple-800' :
-                                                        selectedOrder?.status === 'paid' ? 'bg-blue-100 text-blue-800' :
-                                                            selectedOrder?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                                                'bg-yellow-100 text-yellow-800'
+                                            selectedOrder?.status === 'delivered' ? 'bg-teal-100 text-teal-800' :
+                                                selectedOrder?.status === 'shipping' ? 'bg-purple-100 text-purple-800' :
+                                                    selectedOrder?.status === 'paid' ? 'bg-blue-100 text-blue-800' :
+                                                        selectedOrder?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                            'bg-yellow-100 text-yellow-800'
                                             }`}>
-                                            {selectedOrder?.status === 'completed' ? 'Hoàn thành' :
-                                                selectedOrder?.status === 'delivered' ? 'Giao hàng thành công' :
-                                                    selectedOrder?.status === 'shipping' ? 'Đang giao hàng' :
-                                                        selectedOrder?.status === 'paid' ? 'Đã thanh toán' :
-                                                            selectedOrder?.status === 'cancelled' ? 'Đã hủy' :
-                                                                'Chờ xử lý'}
+                                            {selectedOrder?.status === 'completed' ? 'Completed' :
+                                                selectedOrder?.status === 'delivered' ? 'Delivered' :
+                                                    selectedOrder?.status === 'shipping' ? 'Shipping' :
+                                                        selectedOrder?.status === 'paid' ? 'Paid' :
+                                                            selectedOrder?.status === 'cancelled' ? 'Cancelled' :
+                                                                'Pending'}
                                         </span>
                                     </div>
                                 </div>
@@ -730,9 +772,9 @@ export default function Profile() {
                                         </svg>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-500">Ngày đặt hàng</p>
+                                        <p className="text-sm text-gray-500">Order Date</p>
                                         <p className="font-medium text-gray-900">
-                                            {new Date(selectedOrder?.createdAt).toLocaleString('vi-VN', {
+                                            {new Date(selectedOrder?.createdAt).toLocaleString('en-US', {
                                                 year: 'numeric',
                                                 month: '2-digit',
                                                 day: '2-digit',
@@ -751,11 +793,11 @@ export default function Profile() {
                                         </svg>
                                     </div>
                                     <div>
-                                        <p className="text-sm text-gray-500">Phương thức thanh toán</p>
+                                        <p className="text-sm text-gray-500">Payment Method</p>
                                         <p className="font-medium text-gray-900">
                                             {selectedOrder?.paymentMethod === 'vnpay' ? 'VNPay' :
-                                                selectedOrder?.paymentMethod === 'cod' ? 'Thanh toán khi nhận hàng' :
-                                                    selectedOrder?.paymentMethod || 'Chưa xác định'}
+                                                selectedOrder?.paymentMethod === 'cod' ? 'Cash on Delivery' :
+                                                    selectedOrder?.paymentMethod || 'Not specified'}
                                         </p>
                                     </div>
                                 </div>
@@ -784,7 +826,7 @@ export default function Profile() {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                         </svg>
-                                        Địa chỉ giao hàng
+                                        Shipping Address
                                     </h4>
                                     <p className="text-gray-700">
                                         {typeof selectedOrder.shippingAddress === 'string'
@@ -801,7 +843,7 @@ export default function Profile() {
 
                             {/* Order Items */}
                             <div className="mb-6">
-                                <h4 className="font-semibold text-gray-900 mb-3">Sản phẩm đã đặt</h4>
+                                <h4 className="font-semibold text-gray-900 mb-3">Ordered Products</h4>
                                 <div className="space-y-3">
                                     {orderDetails.items && orderDetails.items.length > 0 ? (
                                         orderDetails.items.map((item, index) => (
@@ -811,7 +853,7 @@ export default function Profile() {
                                                     {item.product?.images?.[0] || item.product?.image ? (
                                                         <img
                                                             src={item.product.images?.[0] || item.product.image}
-                                                            alt={item.product.name || 'Sản phẩm'}
+                                                            alt={item.product.name || 'Product'}
                                                             className="w-full h-full object-cover"
                                                             onError={(e) => {
                                                                 e.target.style.display = 'none';
@@ -829,17 +871,17 @@ export default function Profile() {
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="font-medium text-gray-900">{item.product?.name || `Sản phẩm #${index + 1}`}</p>
+                                                    <p className="font-medium text-gray-900">{item.product?.name || `Product #${index + 1}`}</p>
                                                     {item.product?.category && (
                                                         <p className="text-xs text-gray-500 mt-0.5">{item.product.category}</p>
                                                     )}
-                                                    <p className="text-sm text-gray-500 mt-1">Số lượng: {item.quantity}</p>
+                                                    <p className="text-sm text-gray-500 mt-1">Qty: {item.quantity}</p>
                                                     <p className="text-sm font-medium text-gray-900 mt-1">
                                                         {item.price?.toLocaleString('vi-VN')}₫ x {item.quantity}
                                                     </p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-sm text-gray-500">Thành tiền</p>
+                                                    <p className="text-sm text-gray-500">Subtotal</p>
                                                     <p className="text-lg font-bold text-gray-900">
                                                         {(item.price * item.quantity)?.toLocaleString('vi-VN')}₫
                                                     </p>
@@ -847,7 +889,7 @@ export default function Profile() {
                                             </div>
                                         ))
                                     ) : (
-                                        <p className="text-center text-gray-500 py-4">Không có sản phẩm</p>
+                                        <p className="text-center text-gray-500 py-4">No products found</p>
                                     )}
                                 </div>
                             </div>
@@ -856,17 +898,17 @@ export default function Profile() {
                             <div className="border-t pt-4">
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-gray-600">
-                                        <span>Tổng tiền hàng:</span>
+                                        <span>Subtotal:</span>
                                         <span className="font-medium">{selectedOrder?.totalAmount?.toLocaleString('vi-VN')}₫</span>
                                     </div>
                                     {selectedOrder?.shippingFee > 0 && (
                                         <div className="flex justify-between text-gray-600">
-                                            <span>Phí vận chuyển:</span>
+                                            <span>Shipping Fee:</span>
                                             <span className="font-medium text-blue-600">+{selectedOrder.shippingFee?.toLocaleString('vi-VN')}₫</span>
                                         </div>
                                     )}
                                     <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t">
-                                        <span>Tổng thanh toán:</span>
+                                        <span>Total:</span>
                                         <span className="text-red-600">
                                             {((selectedOrder?.totalAmount || 0) + (selectedOrder?.shippingFee || 0)).toLocaleString('vi-VN')}₫
                                         </span>
@@ -883,7 +925,7 @@ export default function Profile() {
                                         onClick={() => handleCancelOrder(selectedOrder._id)}
                                         className="px-6 py-2.5 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors rounded"
                                     >
-                                        Hủy đơn hàng
+                                        Cancel Order
                                     </button>
                                 )}
                             </div>
@@ -891,7 +933,7 @@ export default function Profile() {
                                 onClick={closeModal}
                                 className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 transition-colors rounded"
                             >
-                                Đóng
+                                Close
                             </button>
                         </div>
                     </div>
@@ -915,12 +957,12 @@ export default function Profile() {
 
                             {/* Title */}
                             <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
-                                Xác nhận hủy đơn hàng
+                                Confirm Order Cancellation
                             </h3>
 
                             {/* Message */}
                             <p className="text-gray-600 text-center mb-6">
-                                Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.
+                                Are you sure you want to cancel this order? This action cannot be undone.
                             </p>
 
                             {/* Buttons */}
@@ -932,13 +974,13 @@ export default function Profile() {
                                     }}
                                     className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors rounded-lg"
                                 >
-                                    Không
+                                    No
                                 </button>
                                 <button
                                     onClick={confirmCancelOrder}
                                     className="flex-1 px-6 py-3 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors rounded-lg shadow-md hover:shadow-lg"
                                 >
-                                    Có, hủy đơn
+                                    Yes, Cancel Order
                                 </button>
                             </div>
                         </div>

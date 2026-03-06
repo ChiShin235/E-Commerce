@@ -26,7 +26,7 @@ const VnpayReturn = () => {
     if (!hasParamsInitial) {
       return {
         loading: false,
-        error: "Thiếu tham số trả về từ VNPay.",
+        error: "Missing return parameters from VNPay.",
         data: null,
       };
     }
@@ -59,7 +59,7 @@ const VnpayReturn = () => {
       .catch((error) => {
         if (!isActive) return;
         const message =
-          error.response?.data?.message || "Không thể xác minh giao dịch.";
+          error.response?.data?.message || "Unable to verify transaction.";;
         setState({ loading: false, error: message, data: null });
       });
 
@@ -70,12 +70,12 @@ const VnpayReturn = () => {
 
   const isSuccess = state.data?.isVerified && state.data?.isSuccess;
   const title = state.loading
-    ? "Đang xác minh giao dịch..."
+    ? "Verifying transaction..."
     : state.error
-      ? "Xác minh giao dịch thất bại"
+      ? "Transaction verification failed"
       : isSuccess
-        ? "Thanh toán thành công"
-        : "Thanh toán chưa thành công";
+        ? "Payment successful"
+        : "Payment unsuccessful";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -123,7 +123,7 @@ const VnpayReturn = () => {
             {state.loading && (
               <div className="space-y-4">
                 <p className="text-base text-gray-700">
-                  Vui lòng chờ trong giây lát để hệ thống xác minh giao dịch.
+                  Please wait a moment while we verify your transaction.
                 </p>
                 <div className="flex gap-2">
                   <div className="h-2 w-2 animate-bounce rounded-full bg-black [animation-delay:-0.3s]"></div>
@@ -143,14 +143,14 @@ const VnpayReturn = () => {
               <div className="space-y-4">
                 <div className="border-l-4 border-black bg-gray-50 p-4">
                   <p className="text-sm font-medium text-gray-900">
-                    {state.data?.message || "Giao dịch đã được xử lý."}
+                    {state.data?.message || "Transaction has been processed."}
                   </p>
                 </div>
 
                 {state.data?.orderId && (
                   <div className="border border-gray-200 bg-white p-4">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <span className="text-sm font-medium text-gray-600">Mã đơn hàng</span>
+                      <span className="text-sm font-medium text-gray-600">Order ID</span>
                       <code className="border border-gray-300 bg-gray-50 px-3 py-1.5 font-mono text-sm font-medium text-gray-900">
                         {state.data.orderId}
                       </code>
@@ -160,12 +160,12 @@ const VnpayReturn = () => {
 
                 <div className="border border-gray-200 bg-white p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-sm font-medium text-gray-600">Trạng thái xác minh</span>
+                    <span className="text-sm font-medium text-gray-600">Verification Status</span>
                     <span className={`inline-flex w-fit items-center gap-2 border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${state.data?.isVerified
                       ? "border-black bg-black text-white"
                       : "border-gray-300 bg-white text-gray-900"
                       }`}>
-                      {state.data?.isVerified ? "Hợp lệ" : "Không hợp lệ"}
+                      {state.data?.isVerified ? "Valid" : "Invalid"}
                     </span>
                   </div>
                 </div>
@@ -178,24 +178,24 @@ const VnpayReturn = () => {
             <div className="flex flex-col gap-3 sm:flex-row">
               {isSuccess ? (
                 <Link
-                  to="/order"
+                  to="/profile?tab=orders"
                   className="inline-flex items-center justify-center gap-2 border-2 border-black bg-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-all hover:bg-white hover:text-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
                 >
-                  Xem đơn hàng
+                  View Orders
                 </Link>
               ) : (
                 <Link
                   to="/cart"
                   className="inline-flex items-center justify-center gap-2 border-2 border-black bg-black px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-all hover:bg-white hover:text-black focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
                 >
-                  Quay lại giỏ hàng
+                  Back to Cart
                 </Link>
               )}
               <Link
                 to="/"
                 className="inline-flex items-center justify-center gap-2 border-2 border-gray-300 bg-white px-6 py-3 text-sm font-semibold uppercase tracking-wide text-gray-900 transition-all hover:border-black hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
               >
-                Về trang chủ
+                Back to Home
               </Link>
             </div>
           </div>
