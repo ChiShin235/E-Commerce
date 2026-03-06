@@ -55,7 +55,8 @@ export default function ManagerOrders() {
         const colors = {
             'pending': 'bg-yellow-100 text-yellow-700',
             'paid': 'bg-blue-100 text-blue-700',
-            'shipped': 'bg-purple-100 text-purple-700',
+            'shipping': 'bg-purple-100 text-purple-700',
+            'delivered': 'bg-teal-100 text-teal-700',
             'completed': 'bg-green-100 text-green-700',
             'cancelled': 'bg-red-100 text-red-700'
         };
@@ -66,7 +67,8 @@ export default function ManagerOrders() {
         const statusMap = {
             'pending': 'Pending',
             'paid': 'Paid',
-            'shipped': 'Shipping',
+            'shipping': 'Shipping',
+            'delivered': 'Delivered',
             'completed': 'Completed',
             'cancelled': 'Cancelled'
         };
@@ -170,7 +172,8 @@ export default function ManagerOrders() {
                                 <option value="">All</option>
                                 <option value="pending">Pending</option>
                                 <option value="paid">Paid</option>
-                                <option value="shipped">Shipping</option>
+                                <option value="shipping">Shipping</option>
+                                <option value="delivered">Delivered</option>
                                 <option value="completed">Completed</option>
                                 <option value="cancelled">Cancelled</option>
                             </select>

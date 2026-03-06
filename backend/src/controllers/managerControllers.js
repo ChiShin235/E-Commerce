@@ -74,7 +74,7 @@ export const getManagerStats = async (req, res) => {
       {
         $match: {
           createdAt: { $gte: thirtyDaysAgo },
-          status: { $in: ["completed", "shipped", "paid"] },
+          status: { $in: ["completed", "delivered", "shipping", "paid"] },
         },
       },
       {
@@ -362,7 +362,7 @@ export const getManagerTopProducts = async (req, res) => {
     const topProducts = await Order.aggregate([
       {
         $match: {
-          status: { $in: ["completed", "shipped", "paid"] },
+          status: { $in: ["completed", "delivered", "shipping", "paid"] },
         },
       },
       {

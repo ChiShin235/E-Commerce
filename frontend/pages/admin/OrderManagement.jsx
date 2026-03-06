@@ -64,7 +64,8 @@ export default function OrderManagement() {
         const colors = {
             'pending': 'bg-yellow-100 text-yellow-700',
             'paid': 'bg-blue-100 text-blue-700',
-            'shipped': 'bg-purple-100 text-purple-700',
+            'shipping': 'bg-purple-100 text-purple-700',
+            'delivered': 'bg-teal-100 text-teal-700',
             'completed': 'bg-green-100 text-green-700',
             'cancelled': 'bg-red-100 text-red-700'
         };
@@ -75,7 +76,8 @@ export default function OrderManagement() {
         const statusMap = {
             'pending': 'Pending',
             'paid': 'Paid',
-            'shipped': 'Shipped',
+            'shipping': 'Shipping',
+            'delivered': 'Delivered',
             'completed': 'Completed',
             'cancelled': 'Cancelled'
         };
@@ -202,24 +204,24 @@ export default function OrderManagement() {
                         >
                             <i className="fas fa-shopping-cart mr-3"></i> Orders
                         </button>
-                    <button
-                        onClick={() => navigate('/admin/reports')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-file-alt mr-3"></i> Reports
-                    </button>
-                    <button
-                        onClick={() => navigate('/admin/ai-behavior-logs')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-robot mr-3"></i> AI Behavior Logs
-                    </button>
-                    <button
-                        onClick={() => navigate('/')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-home mr-3"></i> Home
-                    </button>
+                        <button
+                            onClick={() => navigate('/admin/reports')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-file-alt mr-3"></i> Reports
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/ai-behavior-logs')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-robot mr-3"></i> AI Behavior Logs
+                        </button>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-home mr-3"></i> Home
+                        </button>
                         <button
                             onClick={handleLogout}
                             className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left mt-4 border-t border-indigo-800"
@@ -290,7 +292,8 @@ export default function OrderManagement() {
                                         <option value="">All Status</option>
                                         <option value="pending">Pending</option>
                                         <option value="paid">Paid</option>
-                                        <option value="shipped">Shipped</option>
+                                        <option value="shipping">Shipping</option>
+                                        <option value="delivered">Delivered</option>
                                         <option value="completed">Completed</option>
                                         <option value="cancelled">Cancelled</option>
                                     </select>
@@ -526,7 +529,8 @@ export default function OrderManagement() {
                                 >
                                     <option value="pending">Pending</option>
                                     <option value="paid">Paid</option>
-                                    <option value="shipped">Shipped</option>
+                                    <option value="shipping">Shipping</option>
+                                    <option value="delivered">Delivered</option>
                                     <option value="completed">Completed</option>
                                     <option value="cancelled">Cancelled</option>
                                 </select>

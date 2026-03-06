@@ -76,7 +76,8 @@ export default function ManagerDashboard() {
         const colors = {
             'pending': 'bg-yellow-100 text-yellow-700',
             'paid': 'bg-blue-100 text-blue-700',
-            'shipped': 'bg-purple-100 text-purple-700',
+            'shipping': 'bg-purple-100 text-purple-700',
+            'delivered': 'bg-teal-100 text-teal-700',
             'completed': 'bg-green-100 text-green-700',
             'cancelled': 'bg-red-100 text-red-700'
         };
@@ -87,7 +88,8 @@ export default function ManagerDashboard() {
         const statusMap = {
             'pending': 'Chờ xử lý',
             'paid': 'Đã thanh toán',
-            'shipped': 'Đang giao',
+            'shipping': 'Đang giao',
+            'delivered': 'Giao thành công',
             'completed': 'Hoàn thành',
             'cancelled': 'Đã hủy'
         };
@@ -107,7 +109,8 @@ export default function ManagerDashboard() {
         const colorMap = {
             'pending': '#fbbf24',
             'paid': '#3b82f6',
-            'shipped': '#a855f7',
+            'shipping': '#a855f7',
+            'delivered': '#14b8a6',
             'completed': '#10b981',
             'cancelled': '#ef4444'
         };
