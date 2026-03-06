@@ -706,14 +706,18 @@ export default function Profile() {
                                     <div>
                                         <p className="text-sm text-gray-500">Trạng thái</p>
                                         <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium mt-1 ${selectedOrder?.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                            selectedOrder?.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                                selectedOrder?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                                    'bg-yellow-100 text-yellow-800'
+                                                selectedOrder?.status === 'delivered' ? 'bg-teal-100 text-teal-800' :
+                                                    selectedOrder?.status === 'shipping' ? 'bg-purple-100 text-purple-800' :
+                                                        selectedOrder?.status === 'paid' ? 'bg-blue-100 text-blue-800' :
+                                                            selectedOrder?.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                                                'bg-yellow-100 text-yellow-800'
                                             }`}>
                                             {selectedOrder?.status === 'completed' ? 'Hoàn thành' :
-                                                selectedOrder?.status === 'processing' ? 'Đang xử lý' :
-                                                    selectedOrder?.status === 'cancelled' ? 'Đã hủy' :
-                                                        'Chờ xử lý'}
+                                                selectedOrder?.status === 'delivered' ? 'Giao hàng thành công' :
+                                                    selectedOrder?.status === 'shipping' ? 'Đang giao hàng' :
+                                                        selectedOrder?.status === 'paid' ? 'Đã thanh toán' :
+                                                            selectedOrder?.status === 'cancelled' ? 'Đã hủy' :
+                                                                'Chờ xử lý'}
                                         </span>
                                     </div>
                                 </div>
