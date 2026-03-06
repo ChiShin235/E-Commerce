@@ -178,6 +178,11 @@ export const orderAPI = {
     return response.data;
   },
 
+  confirmReceived: async (id) => {
+    const response = await api.put(`/orders/${id}/confirm-received`);
+    return response.data;
+  },
+
   delete: async (id) => {
     const response = await api.delete(`/orders/${id}`);
     return response.data;

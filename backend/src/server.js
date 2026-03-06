@@ -34,6 +34,8 @@ import {
   requireAdmin,
   requirePermission,
 } from "./middleware/roleMiddleware.js";
+import cron from "node-cron";
+import Order from "./models/Order.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -96,11 +98,7 @@ app.use("/api/users", authenticateToken, requireAdmin, userRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use(
-  "/api/recommendations",
-  authenticateToken,
-  aiRecommendationRoutes,
-);
+app.use("/api/recommendations", authenticateToken, aiRecommendationRoutes);
 app.use("/api/chatbot-logs", authenticateToken, requireAdmin, chatbotLogRoutes);
 app.use("/api/chatbot", authenticateToken, chatbotRoutes);
 app.use("/api/ai-behavior-logs", authenticateToken, aiBehaviorLogRoutes);
@@ -145,7 +143,26 @@ process.on("unhandledRejection", (reason) => {
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught Exception:", error);
-}); // Káº¿t ná»‘i vá»›i MongoDB trÆ°á»›c khi khá»Ÿi Ä‘á»™ng server
+});
+
+// Cron job: tự động chuyển đơn hàng 'delivered' sang 'completed' sau 2 ngày
+// Chạy mỗi giờ
+cron.schedule("*0 * * * *", async () => {
+  try {
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const result = await Order.updateMany(
+      { status: "delivered", updatedAt: { $lte: twoDaysAgo } },
+      { $set: { status: "completed" } },
+    );
+    if (result.modifiedCount > 0) {
+      console.log(
+        `[CRON] Tự động hoàn thành ${result.modifiedCount} đơn hàng đã giao quá 2 ngày`,
+      );
+    }
+  } catch (error) {
+    console.error("[CRON] Lỗi khi tự động hoàn thành đơn hàng:", error);
+  }
+});
 connectDB()
   .then(() => {
     app.listen(PORT, () => {

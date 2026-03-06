@@ -203,6 +203,22 @@ export default function Profile() {
         }
     };
 
+    const handleConfirmReceived = async (orderId) => {
+        try {
+            const response = await orderAPI.confirmReceived(orderId);
+            if (response.success) {
+                toast.success('Đã xác nhận nhận hàng thành công!');
+                const ordersResponse = await orderAPI.getMyOrders();
+                if (ordersResponse.success) {
+                    setOrders(ordersResponse.data || []);
+                }
+            }
+        } catch (error) {
+            console.error('Confirm received error:', error);
+            toast.error(error.response?.data?.message || 'Không thể xác nhận nhận hàng');
+        }
+    };
+
     if (!user) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -559,6 +575,15 @@ export default function Profile() {
                                                         >
                                                             {loadingOrderDetails ? 'Đang tải...' : 'Xem chi tiết'}
                                                         </button>
+
+                                                        {order.status === 'delivered' && (
+                                                            <button
+                                                                onClick={() => handleConfirmReceived(order._id)}
+                                                                className="px-6 py-2.5 bg-teal-600 text-white font-semibold hover:bg-teal-700 hover:shadow-lg transition-all rounded"
+                                                            >
+                                                                ✅ Đã nhận hàng
+                                                            </button>
+                                                        )}
 
                                                         {canCancelOrder(order) && (
                                                             <button

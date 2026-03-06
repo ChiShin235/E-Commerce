@@ -7,6 +7,7 @@ import {
   deleteOrder,
   getMyOrders,
   cancelOrder,
+  confirmReceived,
 } from "../controllers/orderControllers.js";
 import { requirePermission } from "../middleware/roleMiddleware.js";
 import { authenticateToken } from "../middleware/authMiddleware.js";
@@ -18,6 +19,9 @@ router.get("/my", authenticateToken, getMyOrders);
 
 // Route hủy đơn hàng (user chỉ hủy được đơn của mình)
 router.put("/:id/cancel", authenticateToken, cancelOrder);
+
+// Route xác nhận đã nhận hàng (user xác nhận delivered -> completed)
+router.put("/:id/confirm-received", authenticateToken, confirmReceived);
 
 router.get("/", requirePermission("manage_orders"), getAllOrders);
 router.get("/:id", authenticateToken, getOrderById); // Cho phép user xem đơn hàng của mình

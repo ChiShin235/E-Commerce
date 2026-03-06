@@ -295,3 +295,50 @@ export const cancelOrder = async (req, res) => {
     });
   }
 };
+
+// Confirm received - user xác nhận đã nhận hàng (delivered -> completed)
+export const confirmReceived = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const userId = req.userId;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    // Kiểm tra quyền sở hữu
+    if (order.user.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "You can only confirm your own orders",
+      });
+    }
+
+    // Chỉ được xác nhận khi đơn hàng ở trạng thái 'delivered'
+    if (order.status !== "delivered") {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot confirm received for order with status: ${order.status}`,
+      });
+    }
+
+    order.status = "completed";
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Đã xác nhận nhận hàng thành công",
+      data: order,
+    });
+  } catch (error) {
+    console.error("Error in confirmReceived:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while confirming received",
+    });
+  }
+};
