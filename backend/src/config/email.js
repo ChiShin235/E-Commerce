@@ -46,7 +46,7 @@ export const sendOrderConfirmationEmail = async (orderId) => {
 
   if (!useEthereal && !hasCredentials) {
     console.warn(
-      "[Email] Bỏ qua gửi email: chưa cấu hình EMAIL_USER hoặc EMAIL_PASS. Để test, thêm EMAIL_USE_ETHEREAL=true vào .env"
+      "[Email] Bỏ qua gửi email: chưa cấu hình EMAIL_USER hoặc EMAIL_PASS. Để test, thêm EMAIL_USE_ETHEREAL=true vào .env",
     );
     return { success: false, error: "Email not configured" };
   }
@@ -79,7 +79,7 @@ export const sendOrderConfirmationEmail = async (orderId) => {
         <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${formatVND(item.price)}</td>
         <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">${formatVND(item.quantity * item.price)}</td>
       </tr>
-    `
+    `,
       )
       .join("");
 
@@ -173,14 +173,23 @@ export const sendOrderConfirmationEmail = async (orderId) => {
 
     if (useEthereal) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
-      console.log(`[Email] Đã gửi xác nhận đơn hàng ${orderId} (Ethereal test). Xem tại: ${previewUrl}`);
+      console.log(
+        `[Email] Đã gửi xác nhận đơn hàng ${orderId} (Ethereal test). Xem tại: ${previewUrl}`,
+      );
     } else {
-      console.log(`[Email] Đã gửi xác nhận đơn hàng ${orderId} tới ${recipientEmail}`);
+      console.log(
+        `[Email] Đã gửi xác nhận đơn hàng ${orderId} tới ${recipientEmail}`,
+      );
     }
     return { success: true };
   } catch (error) {
-    const isGmailAuth = error.code === "EAUTH" && ((process.env.EMAIL_HOST || "smtp.gmail.com").includes("gmail") || (process.env.EMAIL_USER || "").includes("gmail.com"));
-    const hint = isGmailAuth ? "\n[Gợi ý] Gmail yêu cầu App Password (không dùng mật khẩu đăng nhập). Bật 2FA rồi tạo App Password tại: https://myaccount.google.com/apppasswords" : "";
+    const isGmailAuth =
+      error.code === "EAUTH" &&
+      ((process.env.EMAIL_HOST || "smtp.gmail.com").includes("gmail") ||
+        (process.env.EMAIL_USER || "").includes("gmail.com"));
+    const hint = isGmailAuth
+      ? "\n[Gợi ý] Gmail yêu cầu App Password (không dùng mật khẩu đăng nhập). Bật 2FA rồi tạo App Password tại: https://myaccount.google.com/apppasswords"
+      : "";
     console.error("[Email] Lỗi gửi email:", error.message + hint);
     return { success: false, error: error.message };
   }
@@ -195,7 +204,7 @@ export const sendWelcomeEmail = async (user) => {
   const transportResult = await createTransporter();
   if (!transportResult) {
     console.warn(
-      "[Email] Bỏ qua gửi welcome: chưa cấu hình EMAIL_USER hoặc EMAIL_PASS. Để test, thêm EMAIL_USE_ETHEREAL=true vào .env"
+      "[Email] Bỏ qua gửi welcome: chưa cấu hình EMAIL_USER hoặc EMAIL_PASS. Để test, thêm EMAIL_USE_ETHEREAL=true vào .env",
     );
     return { success: false, error: "Email not configured" };
   }
@@ -237,7 +246,9 @@ export const sendWelcomeEmail = async (user) => {
 
     if (useEthereal) {
       const previewUrl = nodemailer.getTestMessageUrl(info);
-      console.log(`[Email] Đã gửi welcome tới ${email} (Ethereal test). Xem tại: ${previewUrl}`);
+      console.log(
+        `[Email] Đã gửi welcome tới ${email} (Ethereal test). Xem tại: ${previewUrl}`,
+      );
     } else {
       console.log(`[Email] Đã gửi welcome tới ${email}`);
     }
@@ -251,6 +262,62 @@ export const sendWelcomeEmail = async (user) => {
       ? "\n[Gợi ý] Gmail yêu cầu App Password (không dùng mật khẩu đăng nhập). Bật 2FA rồi tạo App Password tại: https://myaccount.google.com/apppasswords"
       : "";
     console.error("[Email] Lỗi gửi welcome:", error.message + hint);
+    return { success: false, error: error.message };
+  }
+};
+
+export const sendReplyEmail = async ({
+  toEmail,
+  toName,
+  subject,
+  replyMessage,
+  adminName,
+}) => {
+  try {
+    const result = await createTransporter();
+    if (!result) {
+      console.warn("[Email] Bỏ qua gửi reply: chưa cấu hình email.");
+      return { success: false, error: "Email not configured" };
+    }
+    const { transporter, fromEmail, useEthereal } = result;
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <div style="background:#4f46e5;padding:24px 32px;">
+          <h2 style="color:#fff;margin:0;">Reply to your message</h2>
+        </div>
+        <div style="padding:32px;background:#f9fafb;">
+          <p style="color:#374151;">Hi <strong>${toName}</strong>,</p>
+          <p style="color:#374151;">Thank you for reaching out. Here is our reply to your message about <strong>&quot;${subject}&quot;</strong>:</p>
+          <div style="background:#fff;border-left:4px solid #4f46e5;padding:16px 20px;border-radius:4px;margin:20px 0;">
+            <p style="color:#1f2937;white-space:pre-wrap;margin:0;">${replyMessage}</p>
+          </div>
+          <p style="color:#6b7280;font-size:14px;">Best regards,<br/><strong>${adminName || "Support Team"}</strong></p>
+        </div>
+        <div style="padding:16px 32px;background:#e5e7eb;text-align:center;">
+          <p style="color:#9ca3af;font-size:12px;margin:0;">This is an automated reply from our support team.</p>
+        </div>
+      </div>
+    `;
+
+    const info = await transporter.sendMail({
+      from: `"Support Team" <${fromEmail}>`,
+      to: toEmail,
+      subject: `Re: ${subject}`,
+      html,
+    });
+
+    if (useEthereal) {
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log(
+        `[Email] Reply sent to ${toEmail} (Ethereal). Preview: ${previewUrl}`,
+      );
+    } else {
+      console.log(`[Email] Reply sent to ${toEmail}`);
+    }
+    return { success: true };
+  } catch (error) {
+    console.error("[Email] Error sending reply:", error.message);
     return { success: false, error: error.message };
   }
 };

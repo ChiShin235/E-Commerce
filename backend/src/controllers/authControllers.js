@@ -60,7 +60,9 @@ export const register = async (req, res) => {
       name: user.name,
       email: user.email,
       username: user.username,
-    }).catch((err) => console.error("[Email] Lỗi gửi welcome:", err?.message || err));
+    }).catch((err) =>
+      console.error("[Email] Lỗi gửi welcome:", err?.message || err),
+    );
 
     const token = generateToken(user._id);
 
@@ -145,6 +147,8 @@ export const login = async (req, res) => {
           username: user.username,
           name: user.name,
           email: user.email,
+          phone: user.phone,
+          address: user.address,
           role: user.role,
           roles: user.roles,
           createdAt: user.createdAt,

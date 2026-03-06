@@ -190,24 +190,30 @@ export default function CategoryManagement() {
                         >
                             <i className="fas fa-shopping-cart mr-3"></i> Orders
                         </button>
-                    <button
-                        onClick={() => navigate('/admin/reports')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-file-alt mr-3"></i> Reports
-                    </button>
-                    <button
-                        onClick={() => navigate('/admin/ai-behavior-logs')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-robot mr-3"></i> AI Behavior Logs
-                    </button>
-                    <button
-                        onClick={() => navigate('/')}
-                        className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
-                    >
-                        <i className="fas fa-home mr-3"></i> Home
-                    </button>
+                        <button
+                            onClick={() => navigate('/admin/reports')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-file-alt mr-3"></i> Reports
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/ai-behavior-logs')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-robot mr-3"></i> AI Behavior Logs
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/contacts')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-envelope mr-3"></i> Contact Messages
+                        </button>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-home mr-3"></i> Home
+                        </button>
                         <button
                             onClick={handleLogout}
                             className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left mt-4 border-t border-indigo-800"

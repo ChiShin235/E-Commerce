@@ -23,6 +23,7 @@ import userRoleRoutes from "./routes/userRoleRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import statsRoutes from "./routes/statsRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import contactRoutes from "./routes/contactRoutes.js";
 import connectDB from "./config/db.js";
 import dotenv from "dotenv";
 import path from "path";
@@ -115,6 +116,7 @@ app.use("/api/payments", authenticateToken, requireAdmin, paymentRoutes);
 app.use("/api/vnpay", vnpayRoutes);
 app.use("/api/stats", authenticateToken, requireAdmin, statsRoutes);
 app.use("/api/reports", authenticateToken, requireAdmin, reportRoutes);
+app.use("/api/contacts", contactRoutes);
 app.use("/api/manager", managerRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/swagger", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -147,7 +149,7 @@ process.on("uncaughtException", (error) => {
 
 // Cron job: tự động chuyển đơn hàng 'delivered' sang 'completed' sau 2 ngày
 // Chạy mỗi giờ
-cron.schedule("*0 * * * *", async () => {
+cron.schedule("0 * * * *", async () => {
   try {
     const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
     const result = await Order.updateMany(

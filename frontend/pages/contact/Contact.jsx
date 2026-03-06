@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 import Header from '../../src/components/header/Header';
 import Footer from '../../src/components/footer/Footer';
+import { contactAPI } from '../../src/services/api';
+import { toast } from 'sonner';
 
 const Contact = () => {
     const [formData, setFormData] = useState({
@@ -14,32 +16,81 @@ const Contact = () => {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitStatus, setSubmitStatus] = useState(null);
+    const [errors, setErrors] = useState({});
+
+    const validate = () => {
+        const newErrors = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = 'Name is required.';
+        } else if (formData.name.trim().length < 2) {
+            newErrors.name = 'Name must be at least 2 characters.';
+        }
+
+        if (!formData.email.trim()) {
+            newErrors.email = 'Email is required.';
+        } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+            newErrors.email = 'Please enter a valid email address.';
+        }
+
+        if (formData.phone && !/^[+\d\s\-()]{7,15}$/.test(formData.phone)) {
+            newErrors.phone = 'Please enter a valid phone number.';
+        }
+
+        if (!formData.subject.trim()) {
+            newErrors.subject = 'Subject is required.';
+        } else if (formData.subject.trim().length < 3) {
+            newErrors.subject = 'Subject must be at least 3 characters.';
+        }
+
+        if (!formData.message.trim()) {
+            newErrors.message = 'Message is required.';
+        } else if (formData.message.trim().length < 10) {
+            newErrors.message = 'Message must be at least 10 characters.';
+        }
+
+        return newErrors;
+    };
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        let sanitized = value;
+
+        // Phone: only allow digits, +, -, (, ), spaces
+        if (name === 'phone') {
+            sanitized = value.replace(/[^\d+\-()\s]/g, '');
+        }
+
+        setFormData({ ...formData, [name]: sanitized });
+        // Clear error on change
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: '' }));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const validationErrors = validate();
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors(validationErrors);
+            return;
+        }
+
         setIsSubmitting(true);
 
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            await contactAPI.submit(formData);
             setSubmitStatus('success');
-            setIsSubmitting(false);
-            setFormData({
-                name: '',
-                email: '',
-                phone: '',
-                subject: '',
-                message: ''
-            });
-
+            toast.success("Message sent! We'll get back to you soon.");
+            setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
             setTimeout(() => setSubmitStatus(null), 5000);
-        }, 1500);
+        } catch (error) {
+            console.error('Contact submit error:', error);
+            toast.error(error.response?.data?.message || 'Failed to send message. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -164,10 +215,10 @@ const Contact = () => {
                                             name="name"
                                             value={formData.name}
                                             onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent ${errors.name ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                             placeholder="John Doe"
                                         />
+                                        {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
                                     </div>
 
                                     {/* Email */}
@@ -181,10 +232,10 @@ const Contact = () => {
                                             name="email"
                                             value={formData.email}
                                             onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent ${errors.email ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                             placeholder="john@example.com"
                                         />
+                                        {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
                                     </div>
                                 </div>
 
@@ -200,9 +251,10 @@ const Contact = () => {
                                             name="phone"
                                             value={formData.phone}
                                             onChange={handleChange}
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent ${errors.phone ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                             placeholder="+84 123 456 789"
                                         />
+                                        {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
                                     </div>
 
                                     {/* Subject */}
@@ -216,10 +268,10 @@ const Contact = () => {
                                             name="subject"
                                             value={formData.subject}
                                             onChange={handleChange}
-                                            required
-                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent ${errors.subject ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                             placeholder="How can we help?"
                                         />
+                                        {errors.subject && <p className="mt-1 text-xs text-red-500">{errors.subject}</p>}
                                     </div>
                                 </div>
 
@@ -233,11 +285,11 @@ const Contact = () => {
                                         name="message"
                                         value={formData.message}
                                         onChange={handleChange}
-                                        required
                                         rows="6"
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none"
+                                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent resize-none ${errors.message ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
                                         placeholder="Tell us more about your inquiry..."
                                     />
+                                    {errors.message && <p className="mt-1 text-xs text-red-500">{errors.message}</p>}
                                 </div>
 
                                 {/* Submit Button */}

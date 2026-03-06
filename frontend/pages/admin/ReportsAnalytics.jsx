@@ -176,6 +176,12 @@ export default function ReportsAnalytics() {
                             <i className="fas fa-robot mr-3"></i> AI Behavior Logs
                         </button>
                         <button
+                            onClick={() => navigate('/admin/contacts')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-envelope mr-3"></i> Contact Messages
+                        </button>
+                        <button
                             onClick={() => navigate('/')}
                             className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
                         >
@@ -252,6 +258,12 @@ export default function ReportsAnalytics() {
                             className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
                         >
                             <i className="fas fa-robot mr-3"></i> AI Behavior Logs
+                        </button>
+                        <button
+                            onClick={() => navigate('/admin/contacts')}
+                            className="w-full flex items-center px-6 py-3 hover:bg-indigo-800 transition text-left"
+                        >
+                            <i className="fas fa-envelope mr-3"></i> Contact Messages
                         </button>
                         <button
                             onClick={() => navigate('/')}

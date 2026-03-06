@@ -373,6 +373,38 @@ export const userAPI = {
   },
 };
 
+export const contactAPI = {
+  submit: async (data) => {
+    const response = await api.post("/contacts", data);
+    return response.data;
+  },
+
+  getAll: async (params = {}) => {
+    const response = await api.get("/contacts", { params });
+    return response.data;
+  },
+
+  markAsRead: async (id) => {
+    const response = await api.patch(`/contacts/${id}/read`);
+    return response.data;
+  },
+
+  delete: async (id) => {
+    const response = await api.delete(`/contacts/${id}`);
+    return response.data;
+  },
+
+  getUnreadCount: async () => {
+    const response = await api.get("/contacts/unread-count");
+    return response.data;
+  },
+
+  reply: async (id, replyMessage) => {
+    const response = await api.post(`/contacts/${id}/reply`, { replyMessage });
+    return response.data;
+  },
+};
+
 export const roleAPI = {
   getAll: async () => {
     const response = await api.get("/roles");
