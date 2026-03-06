@@ -25,6 +25,7 @@ import UserManagement from '../pages/admin/UserManagement';
 import OrderManagement from '../pages/admin/OrderManagement';
 import CategoryManagement from '../pages/admin/CategoryManagement';
 import ReportsAnalytics from '../pages/admin/ReportsAnalytics';
+import AIBehaviorLogs from '../pages/admin/AIBehaviorLogs';
 import ManagerDashboard from '../pages/manager/ManagerDashboard';
 import ManagerOrders from '../pages/manager/ManagerOrders';
 import ManagerProducts from '../pages/manager/ManagerProducts';
@@ -85,6 +86,11 @@ function App() {
             <Route path="/admin/reports" element={
               <AdminRoute>
                 <ReportsAnalytics />
+              </AdminRoute>
+            } />
+            <Route path="/admin/ai-behavior-logs" element={
+              <AdminRoute>
+                <AIBehaviorLogs />
               </AdminRoute>
             } />
             <Route path="/manager/dashboard" element={

@@ -1,6 +1,7 @@
 import ChatbotLog from "../models/ChatbotLog.js";
 import Product from "../models/Product.js";
 import { generateGeminiChatResponse } from "../services/gemini.js";
+import { logAIBehavior } from "../services/aiBehavior.js";
 
 const MAX_HISTORY_TURNS = 6;
 const MAX_PRODUCTS = 60;
@@ -131,12 +132,13 @@ export const chatWithGemini = async (req, res) => {
     const history = buildHistory(logs);
 
     let productQuery = { stock: { $gt: 0 } };
+    let keywordTokens = [];
     if (productIds?.length) {
       productQuery = { _id: { $in: productIds } };
     } else {
-      const keywords = extractKeywords(message);
-      if (keywords.length > 0) {
-        const pattern = keywords.map(escapeRegex).join("|");
+      keywordTokens = extractKeywords(message);
+      if (keywordTokens.length > 0) {
+        const pattern = keywordTokens.map(escapeRegex).join("|");
         productQuery = {
           $and: [
             { stock: { $gt: 0 } },
@@ -189,6 +191,31 @@ export const chatWithGemini = async (req, res) => {
       user: req.userId,
       message,
       response: responseText,
+    });
+
+    const suggestionIds = Array.from(
+      new Set(
+        suggestions
+          .map((item) => item.productId)
+          .filter(Boolean)
+          .map((item) => String(item)),
+      ),
+    );
+
+    logAIBehavior({
+      user: req.userId,
+      flow: "chatbot",
+      action: "chat_message",
+      message,
+      productIds: suggestionIds,
+      metadata: {
+        chatLogId: newLog._id?.toString(),
+        inputProductIds: Array.isArray(productIds)
+          ? productIds.map((id) => String(id))
+          : [],
+        keywords: keywordTokens,
+        suggestionCount: suggestions.length,
+      },
     });
 
     res.status(200).json({

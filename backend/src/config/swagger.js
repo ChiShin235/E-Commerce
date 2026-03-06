@@ -22,6 +22,7 @@ const swaggerSpec = {
     { name: 'Recommendations', description: 'AI recommendation management' },
     { name: 'Chatbot', description: 'Chatbot assistant' },
     { name: 'ChatbotLogs', description: 'Chatbot log management' },
+    { name: 'AIBehaviorLogs', description: 'AI behavior log management' },
     { name: 'Carts', description: 'Cart management' },
     { name: 'CartItems', description: 'Cart item management' },
     { name: 'Orders', description: 'Order management' },
@@ -280,6 +281,37 @@ const swaggerSpec = {
           user: { type: 'string' },
           message: { type: 'string', example: 'Hello' },
           response: { type: 'string', example: 'Hi there!' },
+        },
+      },
+      AIBehaviorLog: {
+        type: 'object',
+        properties: {
+          _id: { type: 'string' },
+          user: { type: 'string' },
+          flow: { type: 'string', example: 'chatbot' },
+          action: { type: 'string', example: 'chat_message' },
+          message: { type: 'string' },
+          productIds: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          metadata: { type: 'object' },
+          createdAt: { type: 'string', format: 'date-time' },
+          updatedAt: { type: 'string', format: 'date-time' },
+        },
+      },
+      AIBehaviorLogRequest: {
+        type: 'object',
+        required: ['action'],
+        properties: {
+          flow: { type: 'string', example: 'chatbot' },
+          action: { type: 'string', example: 'suggestion_click' },
+          message: { type: 'string', example: 'User clicked suggestion' },
+          productIds: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          metadata: { type: 'object' },
         },
       },
       Cart: {
@@ -1497,6 +1529,110 @@ const swaggerSpec = {
         ],
         responses: {
           200: { description: 'OK' },
+          404: { description: 'Not found' },
+        },
+      },
+    },
+    '/ai-behavior-logs': {
+      get: {
+        tags: ['AIBehaviorLogs'],
+        summary: 'Get all AI behavior logs (admin)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'flow', in: 'query', schema: { type: 'string' } },
+          { name: 'action', in: 'query', schema: { type: 'string' } },
+          { name: 'userId', in: 'query', schema: { type: 'string' } },
+          { name: 'limit', in: 'query', schema: { type: 'number', example: 50 } },
+        ],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { type: 'array', items: { $ref: '#/components/schemas/AIBehaviorLog' } },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+        },
+      },
+      post: {
+        tags: ['AIBehaviorLogs'],
+        summary: 'Create AI behavior log',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': { schema: { $ref: '#/components/schemas/AIBehaviorLogRequest' } },
+          },
+        },
+        responses: {
+          201: {
+            description: 'Created',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/AIBehaviorLog' } },
+            },
+          },
+          400: { description: 'Bad request' },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/ai-behavior-logs/me': {
+      get: {
+        tags: ['AIBehaviorLogs'],
+        summary: 'Get my AI behavior logs',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'flow', in: 'query', schema: { type: 'string' } },
+          { name: 'action', in: 'query', schema: { type: 'string' } },
+          { name: 'limit', in: 'query', schema: { type: 'number', example: 50 } },
+        ],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': {
+                schema: { type: 'array', items: { $ref: '#/components/schemas/AIBehaviorLog' } },
+              },
+            },
+          },
+          401: { description: 'Unauthorized' },
+        },
+      },
+    },
+    '/ai-behavior-logs/{id}': {
+      get: {
+        tags: ['AIBehaviorLogs'],
+        summary: 'Get AI behavior log by ID (admin)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: {
+            description: 'OK',
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/AIBehaviorLog' } },
+            },
+          },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
+          404: { description: 'Not found' },
+        },
+      },
+      delete: {
+        tags: ['AIBehaviorLogs'],
+        summary: 'Delete AI behavior log (admin)',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+        ],
+        responses: {
+          200: { description: 'OK' },
+          401: { description: 'Unauthorized' },
+          403: { description: 'Forbidden' },
           404: { description: 'Not found' },
         },
       },

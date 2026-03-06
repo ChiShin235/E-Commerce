@@ -317,6 +317,25 @@ export const chatbotAPI = {
   },
 };
 
+export const aiBehaviorLogAPI = {
+  getAll: async (params = {}) => {
+    const response = await api.get("/ai-behavior-logs", { params });
+    return response.data;
+  },
+  getMine: async (params = {}) => {
+    const response = await api.get("/ai-behavior-logs/me", { params });
+    return response.data;
+  },
+  create: async (payload) => {
+    const response = await api.post("/ai-behavior-logs", payload);
+    return response.data;
+  },
+  delete: async (id) => {
+    const response = await api.delete(`/ai-behavior-logs/${id}`);
+    return response.data;
+  },
+};
+
 export const userAPI = {
   getAll: async () => {
     const response = await api.get("/users");

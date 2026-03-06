@@ -2,6 +2,7 @@
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import { generateGeminiRecommendations } from '../services/gemini.js';
+import { logAIBehavior } from '../services/aiBehavior.js';
 
 const DEFAULT_LIMIT = 6;
 const MAX_CANDIDATES = 50;
@@ -229,6 +230,26 @@ export const generateRecommendations = async (req, res) => {
                 score: item.score,
             }))
             .filter((item) => item.product);
+
+        const recommendationIds = recommendations.map((item) =>
+            String(item.productId),
+        );
+
+        logAIBehavior({
+            user: targetUserId,
+            flow: 'recommendation',
+            action: 'generate',
+            message: prompt ? String(prompt).trim() : undefined,
+            productIds: recommendationIds,
+            metadata: {
+                source,
+                limit: desiredLimit,
+                candidateProductIds: Array.isArray(candidateProductIds)
+                    ? candidateProductIds.map((id) => String(id))
+                    : [],
+                requestedBy: String(requesterId),
+            },
+        });
 
         res.status(200).json({
             success: true,
