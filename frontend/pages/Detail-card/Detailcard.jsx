@@ -144,9 +144,10 @@ export default function Detailcard() {
         }
 
         console.log('🛒 handleAddToCart called in Detailcard');
-        addToCart(product, selectedSize, 1);
+        addToCart(product, selectedSize, quantity);
         toast.success(`Product added to cart!`);
-        setSelectedSize(''); // Reset size sau khi add thành công
+        setSelectedSize('');
+        setQuantity(1);
     };
 
     const handleBuyNow = () => {
@@ -280,6 +281,28 @@ export default function Detailcard() {
                                 </div>
                             </div>
                         )}
+
+                        {/* Quantity Selector */}
+                        <div className="mb-6">
+                            <h3 className="text-sm font-medium text-gray-900 mb-3">Quantity</h3>
+                            <div className="flex items-center border-2 border-gray-300 w-fit">
+                                <button
+                                    onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                    className="px-4 py-3 text-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-150 select-none"
+                                >
+                                    −
+                                </button>
+                                <span className="px-6 py-3 text-base font-semibold text-gray-900 min-w-[3rem] text-center border-x-2 border-gray-300">
+                                    {quantity}
+                                </span>
+                                <button
+                                    onClick={() => setQuantity(q => Math.min(product.stock, q + 1))}
+                                    className="px-4 py-3 text-lg font-medium text-gray-700 hover:bg-gray-100 transition-colors duration-150 select-none"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
 
                         {/* Add to Cart Button */}
                         <button

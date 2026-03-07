@@ -102,7 +102,7 @@ export const createOrUpdateReview = async (req, res) => {
     if (completedOrders.length === 0) {
       return res.status(403).json({
         message:
-          "Bạn chỉ có thể đánh giá sản phẩm sau khi đơn hàng đã hoàn thành",
+          "You can only review a product after your order has been completed",
       });
     }
 
@@ -115,7 +115,7 @@ export const createOrUpdateReview = async (req, res) => {
     if (!hasPurchased) {
       return res.status(403).json({
         message:
-          "Bạn chỉ có thể đánh giá sản phẩm đã mua và đơn hàng đã hoàn thành",
+          "You can only review products you have purchased with a completed order",
       });
     }
 
@@ -224,7 +224,7 @@ export const canReviewProduct = async (req, res) => {
       return res.status(200).json({
         canReview: false,
         message:
-          "Bạn chỉ có thể đánh giá sản phẩm sau khi đơn hàng đã hoàn thành",
+          "You can only review a product after your order has been completed",
       });
     }
 
@@ -238,13 +238,13 @@ export const canReviewProduct = async (req, res) => {
       return res.status(200).json({
         canReview: false,
         message:
-          "Bạn chỉ có thể đánh giá sản phẩm đã mua và đơn hàng đã hoàn thành",
+          "You can only review products you have purchased with a completed order",
       });
     }
 
     return res.status(200).json({
       canReview: true,
-      message: "Bạn có thể đánh giá sản phẩm này",
+      message: "You can review this product",
     });
   } catch (error) {
     console.error("Error in canReviewProduct:", error);
