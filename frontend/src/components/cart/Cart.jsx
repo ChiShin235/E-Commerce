@@ -10,7 +10,8 @@ import Footer from '../footer/Footer';
 
 export default function Cart() {
     const navigate = useNavigate();
-    const { cartItems, removeFromCart, updateQuantity, getCartTotal } = useCart();
+    const { cartItems: rawCartItems, removeFromCart, updateQuantity, getCartTotal } = useCart();
+    const cartItems = rawCartItems.filter(item => item?.product != null);
     const { isAuthenticated } = useAuth();
     const [relatedProducts, setRelatedProducts] = useState([]);
     const cardRefs = useRef([]);

@@ -532,7 +532,7 @@ export default function Shop() {
                 {/* No Products */}
                 {!loading && sortedProducts.length === 0 && (
                     <div className="text-center py-16">
-                        <p className="text-gray-600 text-lg">Không tìm thấy sản phẩm</p>
+                        <p className="text-gray-600 text-lg">Product not found</p>
                     </div>
                 )}
             </div>

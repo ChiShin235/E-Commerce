@@ -33,7 +33,14 @@ api.interceptors.response.use(
       const isPublicPage =
         currentPath === "/" ||
         currentPath === "/shop" ||
-        currentPath.startsWith("/product/");
+        currentPath === "/cart" ||
+        currentPath === "/bestseller" ||
+        currentPath === "/about" ||
+        currentPath === "/contact" ||
+        currentPath.startsWith("/product/") ||
+        currentPath.startsWith("/manager/") ||
+        currentPath.startsWith("/admin/") ||
+        currentPath.startsWith("/staff/");
 
       // Chỉ redirect nếu không phải auth page và không phải public page
       if (!isAuthPage && !isPublicPage) {

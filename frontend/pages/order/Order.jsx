@@ -39,7 +39,8 @@ export default function Order() {
     };
 
     const effectiveCartItems = useMemo(() => {
-        return serverCartItems !== null ? serverCartItems : cartItems;
+        const items = serverCartItems !== null ? serverCartItems : cartItems;
+        return items.filter(item => item?.product != null);
     }, [serverCartItems, cartItems]);
 
     const subtotal = useMemo(() => {

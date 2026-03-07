@@ -23,8 +23,14 @@ export const CartProvider = ({ children }) => {
 
     const [cartItems, setCartItems] = useState(() => {
         // Initialize from localStorage with user-specific key
-        const savedCart = localStorage.getItem(getCartKey());
-        return savedCart ? JSON.parse(savedCart) : [];
+        try {
+            const savedCart = localStorage.getItem(getCartKey());
+            const parsed = savedCart ? JSON.parse(savedCart) : [];
+            // Filter out corrupted items with null/undefined product
+            return Array.isArray(parsed) ? parsed.filter(item => item?.product != null) : [];
+        } catch {
+            return [];
+        }
     });
 
     // Save cart to localStorage whenever it changes
@@ -75,11 +81,13 @@ export const CartProvider = ({ children }) => {
                 const { cart, items } = response;
                 setBackendCartId(cart._id);
 
-                const formatted = items.map((item) => ({
-                    product: item.product,
-                    size: item.size || 'M',
-                    quantity: item.quantity,
-                }));
+                const formatted = items
+                    .filter((item) => item.product != null)
+                    .map((item) => ({
+                        product: item.product,
+                        size: item.size || 'M',
+                        quantity: item.quantity,
+                    }));
 
                 console.log('✅ Loaded from backend:', formatted.length, 'items');
                 return formatted;
@@ -293,12 +301,13 @@ export const CartProvider = ({ children }) => {
 
     const getCartTotal = () => {
         return cartItems.reduce((total, item) => {
-            return total + item.product.price * item.quantity;
+            if (!item?.product) return total;
+            return total + (item.product.price || 0) * (item.quantity || 0);
         }, 0);
     };
 
     const getCartItemsCount = () => {
-        return cartItems.reduce((total, item) => total + item.quantity, 0);
+        return cartItems.reduce((total, item) => total + (item?.quantity || 0), 0);
     };
 
     return (
