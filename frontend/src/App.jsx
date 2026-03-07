@@ -42,6 +42,8 @@ import ManagerProducts from '../pages/manager/ManagerProducts';
 import ManagerReports from '../pages/manager/ManagerReports';
 import ManagerCategories from '../pages/manager/ManagerCategories';
 import StaffDashboard from '../pages/staff/StaffDashboard';
+import StaffOrder from '../pages/staff/StaffOder';
+import StaffLowStock from '../pages/staff/StaffLowStock';
 
 function App() {
   return (
@@ -137,6 +139,16 @@ function App() {
             <Route path="/staff/dashboard" element={
               <StaffRoute>
                 <StaffDashboard />
+              </StaffRoute>
+            } />
+            <Route path="/staff/orders" element={
+              <StaffRoute>
+                <StaffOrder />
+              </StaffRoute>
+            } />
+            <Route path="/staff/low-stock" element={
+              <StaffRoute>
+                <StaffLowStock />
               </StaffRoute>
             } />
             <Route path="/login" element={<AuthPage />} />

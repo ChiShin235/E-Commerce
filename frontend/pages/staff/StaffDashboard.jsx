@@ -41,10 +41,7 @@ export default function StaffDashboard() {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState(null);
     const [orders, setOrders] = useState([]);
-    const [lowStockProducts, setLowStockProducts] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
-    const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
         fetchData();
@@ -53,31 +50,18 @@ export default function StaffDashboard() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [statsRes, ordersRes, lowStockRes] = await Promise.all([
+            const [statsRes, ordersRes] = await Promise.all([
                 staffAPI.getStats(),
                 staffAPI.getOrders({ page: 1, limit: 10 }),
-                staffAPI.getLowStock()
             ]);
 
             setStats(statsRes.data);
             setOrders(ordersRes.data.orders);
-            setLowStockProducts(lowStockRes.data);
         } catch (error) {
             console.error('Error fetching data:', error);
             toast.error('Failed to load dashboard data');
         } finally {
             setLoading(false);
-        }
-    };
-
-    const handleUpdateStatus = async (orderId, newStatus) => {
-        try {
-            await staffAPI.updateOrderStatus(orderId, newStatus);
-            toast.success('Order status updated successfully');
-            fetchData();
-        } catch (error) {
-            console.error('Error updating status:', error);
-            toast.error(error.response?.data?.message || 'Failed to update order status');
         }
     };
 
@@ -124,14 +108,14 @@ export default function StaffDashboard() {
                         <i className="fas fa-chart-line mr-3"></i> Dashboard
                     </button>
                     <button
-                        onClick={() => setActiveTab('orders')}
-                        className={`w-full flex items-center px-6 py-3 ${activeTab === 'orders' ? 'bg-teal-600 border-l-4 border-teal-400' : 'hover:bg-teal-700'} transition text-left`}
+                        onClick={() => navigate('/staff/orders')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
                     >
                         <i className="fas fa-shopping-cart mr-3"></i> Orders
                     </button>
                     <button
-                        onClick={() => setActiveTab('products')}
-                        className={`w-full flex items-center px-6 py-3 ${activeTab === 'products' ? 'bg-teal-600 border-l-4 border-teal-400' : 'hover:bg-teal-700'} transition text-left`}
+                        onClick={() => navigate('/staff/low-stock')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
                     >
                         <i className="fas fa-box mr-3"></i> Low Stock
                     </button>
@@ -250,127 +234,49 @@ export default function StaffDashboard() {
                                         </div>
                                     </div>
 
-                                    {/* Recent Orders Preview */}
-                                    <div className="bg-white rounded-xl shadow-md p-6">
-                                        <h3 className="text-lg font-bold mb-4">Recent Orders</h3>
-                                        <div className="space-y-3">
-                                            {orders.slice(0, 5).map((order) => (
-                                                <div key={order._id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                                    <div>
-                                                        <p className="font-medium">#{order._id.slice(-8).toUpperCase()}</p>
-                                                        <p className="text-sm text-gray-600">{order.user?.username || 'N/A'}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="font-bold text-teal-600">{formatPrice(order.totalAmount)}</p>
-                                                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                                                            {order.status}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                    {/* Recent Orders Table */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+                                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                                            <h3 className="font-bold text-gray-700">Recent Orders</h3>
+                                            <button
+                                                onClick={() => navigate('/staff/orders')}
+                                                className="text-teal-600 hover:text-teal-700 text-sm font-medium"
+                                            >
+                                                View All
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => setActiveTab('orders')}
-                                            className="mt-4 w-full py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition"
-                                        >
-                                            View All Orders
-                                        </button>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Order ID</th>
+                                                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Customer</th>
+                                                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Total</th>
+                                                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    {orders.slice(0, 5).map((order) => (
+                                                        <tr key={order._id} className="hover:bg-gray-50">
+                                                            <td className="px-6 py-4 text-sm font-medium text-teal-600">
+                                                                #{order._id.slice(-8).toUpperCase()}
+                                                            </td>
+                                                            <td className="px-6 py-4 text-sm">{order.user?.username || 'N/A'}</td>
+                                                            <td className="px-6 py-4 text-sm font-semibold">{formatPrice(order.totalAmount)}</td>
+                                                            <td className="px-6 py-4 text-xs">
+                                                                <span className={`${getStatusColor(order.status)} px-2 py-1 rounded-full`}>
+                                                                    {order.status}
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </>
                             )}
 
-                            {activeTab === 'orders' && (
-                                <div className="bg-white rounded-xl shadow-md p-6">
-                                    <h3 className="text-lg font-bold mb-4">Manage Orders</h3>
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full">
-                                            <thead className="bg-teal-50">
-                                                <tr>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Order ID</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Customer</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Amount</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Status</th>
-                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                                {orders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((order) => (
-                                                    <tr key={order._id} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3 text-sm">#{order._id.slice(-8).toUpperCase()}</td>
-                                                        <td className="px-4 py-3 text-sm">{order.user?.username || 'N/A'}</td>
-                                                        <td className="px-4 py-3 text-sm font-bold text-teal-600">{formatPrice(order.totalAmount)}</td>
-                                                        <td className="px-4 py-3">
-                                                            <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                                                                {order.status}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            {(order.status === 'pending' || order.status === 'processing') ? (
-                                                                <button
-                                                                    onClick={() => handleUpdateStatus(order._id, 'shipping')}
-                                                                    className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
-                                                                >
-                                                                    Ship
-                                                                </button>
-                                                            ) : order.status === 'shipping' ? (
-                                                                <button
-                                                                    onClick={() => handleUpdateStatus(order._id, 'completed')}
-                                                                    className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-                                                                >
-                                                                    Complete
-                                                                </button>
-                                                            ) : (
-                                                                <span className="text-xs text-gray-500">No action</span>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    {Math.ceil(orders.length / ITEMS_PER_PAGE) > 1 && (
-                                        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50 mt-2 rounded-b-lg">
-                                            <div className="text-sm text-gray-600">
-                                                Hiển thị {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, orders.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, orders.length)} / {orders.length} đơn hàng
-                                            </div>
-                                            <div className="flex items-center gap-1">
-                                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
-                                                    <i className="fas fa-chevron-left text-xs"></i>
-                                                </button>
-                                                {Array.from({ length: Math.ceil(orders.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
-                                                    .filter(p => p === 1 || p === Math.ceil(orders.length / ITEMS_PER_PAGE) || Math.abs(p - currentPage) <= 1)
-                                                    .reduce((acc, p, idx, arr) => { if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...'); acc.push(p); return acc; }, [])
-                                                    .map((p, idx) => p === '...' ? (
-                                                        <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
-                                                    ) : (
-                                                        <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${currentPage === p ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-300 hover:bg-gray-100'}`}>{p}</button>
-                                                    ))}
-                                                <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(orders.length / ITEMS_PER_PAGE), p + 1))} disabled={currentPage === Math.ceil(orders.length / ITEMS_PER_PAGE)} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
-                                                    <i className="fas fa-chevron-right text-xs"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {activeTab === 'products' && (
-                                <div className="bg-white rounded-xl shadow-md p-6">
-                                    <h3 className="text-lg font-bold mb-4">Low Stock Products</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {lowStockProducts.map((product) => (
-                                            <div key={product._id} className="border border-red-200 rounded-lg p-4 bg-red-50">
-                                                <h4 className="font-bold text-gray-900">{product.name}</h4>
-                                                <p className="text-sm text-gray-600">{product.category?.name || 'N/A'}</p>
-                                                <div className="mt-2 flex items-center justify-between">
-                                                    <span className="text-lg font-bold text-red-600">Stock: {product.stock}</span>
-                                                    <span className="text-sm text-gray-600">{formatPrice(product.price)}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
                         </>
                     )}
                 </main>
