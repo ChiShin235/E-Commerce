@@ -18,10 +18,11 @@ export default function Shop() {
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const cardRefs = useRef([]);
+    const productsRef = useRef(null);
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 8;
+    const productsPerPage = 16;
 
     // Filter states
     const [filters, setFilters] = useState({
@@ -215,6 +216,9 @@ export default function Shop() {
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+        if (productsRef.current) {
+            productsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     };
 
     return (
@@ -250,7 +254,7 @@ export default function Shop() {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div ref={productsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Filters Bar */}
                 <div className="flex flex-wrap gap-4 mb-8 items-center justify-between">
                     {/* Left side filters */}

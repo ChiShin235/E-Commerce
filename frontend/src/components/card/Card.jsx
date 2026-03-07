@@ -14,10 +14,11 @@ export default function Card() {
     const [favorites, setFavorites] = useState(new Set());
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const cardRefs = useRef([]);
+    const productsRef = useRef(null);
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 8;
+    const productsPerPage = 16;
 
     useEffect(() => {
         fetchProducts();
@@ -91,6 +92,9 @@ export default function Card() {
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+        if (productsRef.current) {
+            productsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     };
 
     if (loading) {
@@ -102,7 +106,7 @@ export default function Card() {
     }
 
     return (
-        <div className="w-full bg-white">
+        <div ref={productsRef} className="w-full bg-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
 
                 {/* Products Grid */}
