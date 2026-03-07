@@ -43,6 +43,8 @@ export default function StaffDashboard() {
     const [orders, setOrders] = useState([]);
     const [lowStockProducts, setLowStockProducts] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
         fetchData();
@@ -292,7 +294,7 @@ export default function StaffDashboard() {
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
-                                                {orders.map((order) => (
+                                                {orders.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map((order) => (
                                                     <tr key={order._id} className="hover:bg-gray-50">
                                                         <td className="px-4 py-3 text-sm">#{order._id.slice(-8).toUpperCase()}</td>
                                                         <td className="px-4 py-3 text-sm">{order.user?.username || 'N/A'}</td>
@@ -326,6 +328,29 @@ export default function StaffDashboard() {
                                             </tbody>
                                         </table>
                                     </div>
+                                    {Math.ceil(orders.length / ITEMS_PER_PAGE) > 1 && (
+                                        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50 mt-2 rounded-b-lg">
+                                            <div className="text-sm text-gray-600">
+                                                Hiển thị {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, orders.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, orders.length)} / {orders.length} đơn hàng
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                                    <i className="fas fa-chevron-left text-xs"></i>
+                                                </button>
+                                                {Array.from({ length: Math.ceil(orders.length / ITEMS_PER_PAGE) }, (_, i) => i + 1)
+                                                    .filter(p => p === 1 || p === Math.ceil(orders.length / ITEMS_PER_PAGE) || Math.abs(p - currentPage) <= 1)
+                                                    .reduce((acc, p, idx, arr) => { if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...'); acc.push(p); return acc; }, [])
+                                                    .map((p, idx) => p === '...' ? (
+                                                        <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
+                                                    ) : (
+                                                        <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${currentPage === p ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-300 hover:bg-gray-100'}`}>{p}</button>
+                                                    ))}
+                                                <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(orders.length / ITEMS_PER_PAGE), p + 1))} disabled={currentPage === Math.ceil(orders.length / ITEMS_PER_PAGE)} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                                    <i className="fas fa-chevron-right text-xs"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

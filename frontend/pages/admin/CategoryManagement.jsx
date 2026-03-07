@@ -15,6 +15,7 @@ export default function CategoryManagement() {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
     const [formData, setFormData] = useState({
         name: '',
         description: ''
@@ -24,6 +25,10 @@ export default function CategoryManagement() {
     useEffect(() => {
         fetchCategories();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     const fetchCategories = async () => {
         try {
@@ -146,6 +151,10 @@ export default function CategoryManagement() {
         category.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         category.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const ITEMS_PER_PAGE = 10;
+    const totalPages = Math.ceil(filteredCategories.length / ITEMS_PER_PAGE);
+    const paginatedCategories = filteredCategories.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
         <>
@@ -298,7 +307,7 @@ export default function CategoryManagement() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {filteredCategories.map((category) => (
+                                            {paginatedCategories.map((category) => (
                                                 <tr key={category._id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">{category.name}</td>
                                                     <td className="px-6 py-4 text-sm text-gray-600">
@@ -329,11 +338,34 @@ export default function CategoryManagement() {
                                             ))}
                                         </tbody>
                                     </table>
-                                    {filteredCategories.length === 0 && (
+                                    {filteredCategories.length === 0 && !loading && (
                                         <div className="text-center py-12 text-gray-500">
                                             No categories found
                                         </div>
                                     )}
+                                </div>
+                            )}
+                            {!loading && totalPages > 1 && (
+                                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+                                    <div className="text-sm text-gray-600">
+                                        Hiển thị {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredCategories.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredCategories.length)} / {filteredCategories.length} kết quả
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                            <i className="fas fa-chevron-left text-xs"></i>
+                                        </button>
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                            .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                            .reduce((acc, p, idx, arr) => { if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...'); acc.push(p); return acc; }, [])
+                                            .map((p, idx) => p === '...' ? (
+                                                <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
+                                            ) : (
+                                                <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${currentPage === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 hover:bg-gray-100'}`}>{p}</button>
+                                            ))}
+                                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                            <i className="fas fa-chevron-right text-xs"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>

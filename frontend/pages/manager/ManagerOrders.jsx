@@ -263,22 +263,34 @@ export default function ManagerOrders() {
                                 {pagination.pages > 1 && (
                                     <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
                                         <div className="text-sm text-gray-600">
-                                            Page {pagination.page} / {pagination.pages}
+                                            Page {pagination.page} / {pagination.pages} &nbsp;·&nbsp; Total <span className="font-semibold text-teal-600">{pagination.total}</span> orders
                                         </div>
-                                        <div className="flex space-x-2">
+                                        <div className="flex items-center gap-1">
                                             <button
                                                 onClick={() => setPagination({ ...pagination, page: Math.max(1, pagination.page - 1) })}
                                                 disabled={pagination.page === 1}
-                                                className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
                                             >
-                                                <i className="fas fa-chevron-left"></i>
+                                                <i className="fas fa-chevron-left text-xs"></i>
                                             </button>
+                                            {Array.from({ length: pagination.pages }, (_, i) => i + 1)
+                                                .filter(p => p === 1 || p === pagination.pages || Math.abs(p - pagination.page) <= 1)
+                                                .reduce((acc, p, idx, arr) => { if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...'); acc.push(p); return acc; }, [])
+                                                .map((p, idx) => p === '...' ? (
+                                                    <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
+                                                ) : (
+                                                    <button
+                                                        key={p}
+                                                        onClick={() => setPagination({ ...pagination, page: p })}
+                                                        className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${pagination.page === p ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-300 hover:bg-gray-100'}`}
+                                                    >{p}</button>
+                                                ))}
                                             <button
                                                 onClick={() => setPagination({ ...pagination, page: Math.min(pagination.pages, pagination.page + 1) })}
                                                 disabled={pagination.page === pagination.pages}
-                                                className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
                                             >
-                                                <i className="fas fa-chevron-right"></i>
+                                                <i className="fas fa-chevron-right text-xs"></i>
                                             </button>
                                         </div>
                                     </div>

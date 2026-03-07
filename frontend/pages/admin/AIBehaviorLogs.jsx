@@ -17,10 +17,15 @@ export default function AIBehaviorLogs() {
     const [searchTerm, setSearchTerm] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteLogId, setDeleteLogId] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         fetchLogs();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, flowFilter, actionFilter, userIdFilter]);
 
     const buildParams = (overrides = {}) => {
         const params = {
@@ -137,6 +142,10 @@ export default function AIBehaviorLogs() {
             metadata.includes(keyword)
         );
     });
+
+    const ITEMS_PER_PAGE = 10;
+    const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
+    const paginatedLogs = filteredLogs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     return (
         <div className="flex h-screen overflow-hidden bg-gray-100">
@@ -330,64 +339,89 @@ export default function AIBehaviorLogs() {
                                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Time</th>
-                                            <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">User</th>
-                                            <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Flow</th>
-                                            <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Action</th>
-                                            <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Message</th>
-                                            <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Products</th>
-                                            <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Metadata</th>
-                                            <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                        {filteredLogs.map((log) => (
-                                            <tr key={log._id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                    {formatDateTime(log.createdAt)}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm font-medium">
-                                                    <span className="text-gray-700">{resolveUserId(log.user)}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm">
-                                                    <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-semibold">
-                                                        {log.flow || '-'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 text-sm">{log.action || '-'}</td>
-                                                <td className="px-6 py-4 text-sm max-w-[220px] truncate" title={log.message}>
-                                                    {log.message || '-'}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm max-w-[180px] truncate" title={formatProductIds(log.productIds)}>
-                                                    {formatProductIds(log.productIds)}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm max-w-[260px] truncate" title={formatMetadata(log.metadata)}>
-                                                    {formatMetadata(log.metadata)}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm">
-                                                    <button
-                                                        onClick={() => openDeleteModal(log._id)}
-                                                        className="text-red-600 hover:text-red-800"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {filteredLogs.length === 0 && (
+                            <>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-gray-50">
                                             <tr>
-                                                <td className="px-6 py-6 text-sm text-gray-500" colSpan="8">
-                                                    No logs found.
-                                                </td>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Time</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">User</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Flow</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Action</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Message</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Products</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Metadata</th>
+                                                <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Actions</th>
                                             </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {paginatedLogs.map((log) => (
+                                                <tr key={log._id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 text-sm whitespace-nowrap">
+                                                        {formatDateTime(log.createdAt)}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm font-medium">
+                                                        <span className="text-gray-700">{resolveUserId(log.user)}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">
+                                                        <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-semibold">
+                                                            {log.flow || '-'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">{log.action || '-'}</td>
+                                                    <td className="px-6 py-4 text-sm max-w-[220px] truncate" title={log.message}>
+                                                        {log.message || '-'}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm max-w-[180px] truncate" title={formatProductIds(log.productIds)}>
+                                                        {formatProductIds(log.productIds)}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm max-w-[260px] truncate" title={formatMetadata(log.metadata)}>
+                                                        {formatMetadata(log.metadata)}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm">
+                                                        <button
+                                                            onClick={() => openDeleteModal(log._id)}
+                                                            className="text-red-600 hover:text-red-800"
+                                                        >
+                                                            <i className="fas fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {filteredLogs.length === 0 && (
+                                                <tr>
+                                                    <td className="px-6 py-6 text-sm text-gray-500" colSpan="8">
+                                                        No logs found.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {!loading && totalPages > 1 && (
+                                    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+                                        <div className="text-sm text-gray-600">
+                                            Hiển thị {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filteredLogs.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredLogs.length)} / {filteredLogs.length} kết quả
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                                <i className="fas fa-chevron-left text-xs"></i>
+                                            </button>
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                                .reduce((acc, p, idx, arr) => { if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...'); acc.push(p); return acc; }, [])
+                                                .map((p, idx) => p === '...' ? (
+                                                    <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
+                                                ) : (
+                                                    <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${currentPage === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 hover:bg-gray-100'}`}>{p}</button>
+                                                ))}
+                                            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                                <i className="fas fa-chevron-right text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

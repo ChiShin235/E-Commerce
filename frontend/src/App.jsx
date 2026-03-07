@@ -9,7 +9,7 @@ import StaffRoute from './components/StaffRoute';
 import ChatbotWidget from './components/chatbot/ChatbotWidget';
 import HomePage from '../pages/homepage/Homepage';
 import AuthPage from '../pages/auth/AuthPage';
-import NotFound from '../pages/NotFound';
+import NotFound from '../pages/errornotfound/NotFound';
 import Detailcard from '../pages/Detail-card/Detailcard';
 import Cart from './components/cart/Cart';
 import Order from '../pages/order/Order';

@@ -18,6 +18,7 @@ const UserManagement = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
     const [sortBy, setSortBy] = useState('default');
+    const [currentPage, setCurrentPage] = useState(1);
     const [formData, setFormData] = useState({
         username: '',
         name: '',
@@ -32,6 +33,10 @@ const UserManagement = () => {
         fetchUsers();
         fetchRoles();
     }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, roleFilter, sortBy]);
 
     const fetchUsers = async () => {
         try {
@@ -231,6 +236,10 @@ const UserManagement = () => {
         }
     });
 
+    const ITEMS_PER_PAGE = 10;
+    const totalPages = Math.ceil(sortedUsers.length / ITEMS_PER_PAGE);
+    const paginatedUsers = sortedUsers.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
     return (
         <>
             <div className="flex h-screen overflow-hidden bg-gray-100">
@@ -413,7 +422,7 @@ const UserManagement = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {sortedUsers.map((user) => (
+                                            {paginatedUsers.map((user) => (
                                                 <tr key={user._id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4 text-sm font-medium">{user.username}</td>
                                                     <td className="px-6 py-4 text-sm">{user.name}</td>
@@ -444,6 +453,29 @@ const UserManagement = () => {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+                            )}
+                            {!loading && totalPages > 1 && (
+                                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+                                    <div className="text-sm text-gray-600">
+                                        Hiển thị {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, sortedUsers.length)}–{Math.min(currentPage * ITEMS_PER_PAGE, sortedUsers.length)} / {sortedUsers.length} kết quả
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                            <i className="fas fa-chevron-left text-xs"></i>
+                                        </button>
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                            .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                            .reduce((acc, p, idx, arr) => { if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...'); acc.push(p); return acc; }, [])
+                                            .map((p, idx) => p === '...' ? (
+                                                <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
+                                            ) : (
+                                                <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${currentPage === p ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 hover:bg-gray-100'}`}>{p}</button>
+                                            ))}
+                                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                            <i className="fas fa-chevron-right text-xs"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>

@@ -15,6 +15,7 @@ export default function ManagerProducts() {
     const [categoryFilter, setCategoryFilter] = useState('');
     const [priceFilter, setPriceFilter] = useState('all');
     const [sortBy, setSortBy] = useState('default');
+    const [currentPage, setCurrentPage] = useState(1);
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteProductId, setDeleteProductId] = useState(null);
@@ -37,7 +38,7 @@ export default function ManagerProducts() {
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const response = await managerAPI.getProducts({});
+            const response = await managerAPI.getProducts({ limit: 10000 });
             setProducts(response.data.products || response.data || response);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -107,6 +108,10 @@ export default function ManagerProducts() {
                 return 0;
         }
     });
+
+    const ITEMS_PER_PAGE = 10;
+    const totalPages = Math.ceil(sortedProducts.length / ITEMS_PER_PAGE);
+    const paginatedProducts = sortedProducts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -453,7 +458,7 @@ export default function ManagerProducts() {
                                                 </td>
                                             </tr>
                                         ) : (
-                                            sortedProducts.map((product) => (
+                                            paginatedProducts.map((product) => (
                                                 <tr key={product._id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4">
                                                         <img
@@ -502,6 +507,29 @@ export default function ManagerProducts() {
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+                        {!loading && totalPages > 1 && (
+                            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
+                                <div className="text-sm text-gray-600">
+                                    Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, sortedProducts.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, sortedProducts.length)} of {sortedProducts.length} results
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                        <i className="fas fa-chevron-left text-xs"></i>
+                                    </button>
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                        .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                        .reduce((acc, p, idx, arr) => { if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...'); acc.push(p); return acc; }, [])
+                                        .map((p, idx) => p === '...' ? (
+                                            <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
+                                        ) : (
+                                            <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${currentPage === p ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-300 hover:bg-gray-100'}`}>{p}</button>
+                                        ))}
+                                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                        <i className="fas fa-chevron-right text-xs"></i>
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -639,22 +667,45 @@ export default function ManagerProducts() {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Sizes (Click to select multiple)
+                                    Size <span className="text-gray-400 font-normal">(Click to select multiple)</span>
                                 </label>
-                                <div className="flex flex-wrap gap-2 p-4 border border-gray-300 rounded-lg min-h-[60px]">
-                                    {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(size => (
-                                        <button
-                                            key={size}
-                                            type="button"
-                                            onClick={() => handleSizeChange(size)}
-                                            className={`px-4 py-2 rounded-lg font-medium transition ${formData.size?.includes(size)
-                                                ? 'bg-teal-600 text-white'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                }`}
-                                        >
-                                            {size}
-                                        </button>
-                                    ))}
+                                <div className="space-y-3 p-4 border border-gray-300 rounded-lg">
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Shoe Size</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'].map(size => (
+                                                <button
+                                                    key={size}
+                                                    type="button"
+                                                    onClick={() => handleSizeChange(size)}
+                                                    className={`px-3 py-1.5 rounded-lg font-medium text-sm transition ${formData.size?.includes(size)
+                                                        ? 'bg-teal-600 text-white'
+                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                        }`}
+                                                >
+                                                    {size}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Clothing Size</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'].map(size => (
+                                                <button
+                                                    key={size}
+                                                    type="button"
+                                                    onClick={() => handleSizeChange(size)}
+                                                    className={`px-3 py-1.5 rounded-lg font-medium text-sm transition ${formData.size?.includes(size)
+                                                        ? 'bg-teal-600 text-white'
+                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                        }`}
+                                                >
+                                                    {size}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

@@ -86,12 +86,12 @@ export default function ManagerDashboard() {
 
     const getStatusText = (status) => {
         const statusMap = {
-            'pending': 'Chờ xử lý',
-            'paid': 'Đã thanh toán',
-            'shipping': 'Đang giao',
-            'delivered': 'Giao thành công',
-            'completed': 'Hoàn thành',
-            'cancelled': 'Đã hủy'
+            'pending': 'Pending',
+            'paid': 'Paid',
+            'shipping': 'Shipping',
+            'delivered': 'Delivered',
+            'completed': 'Completed',
+            'cancelled': 'Cancelled'
         };
         return statusMap[status] || status;
     };
