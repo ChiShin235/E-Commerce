@@ -142,8 +142,35 @@ export const getManagerStats = async (req, res) => {
 
 export const getManagerOrders = async (req, res) => {
   try {
-    const { status, page = 1, limit = 10 } = req.query;
-    const query = status ? { status } : {};
+    const { status, page = 1, limit = 10, search = "" } = req.query;
+
+    const conditions = [];
+    if (status) conditions.push({ status });
+    if (search.trim()) {
+      const matchingUsers = await User.find({
+        $or: [
+          { username: { $regex: search.trim(), $options: "i" } },
+          { email: { $regex: search.trim(), $options: "i" } },
+        ],
+      }).select("_id");
+      const userIds = matchingUsers.map((u) => u._id);
+      conditions.push({
+        $or: [
+          { user: { $in: userIds } },
+          {
+            $expr: {
+              $regexMatch: {
+                input: { $toString: "$_id" },
+                regex: search.trim(),
+                options: "i",
+              },
+            },
+          },
+        ],
+      });
+    }
+    const query =
+      conditions.length > 1 ? { $and: conditions } : conditions[0] || {};
 
     const orders = await Order.find(query)
       .sort({ createdAt: -1 })
@@ -173,11 +200,41 @@ export const getManagerOrders = async (req, res) => {
 
 export const getManagerProducts = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search } = req.query;
-    const query = search ? { name: { $regex: search, $options: "i" } } : {};
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      category = "",
+      priceMin,
+      priceMax,
+      sort = "",
+    } = req.query;
+
+    const query = {};
+    if (search.trim()) {
+      query.$or = [
+        { name: { $regex: search.trim(), $options: "i" } },
+        { description: { $regex: search.trim(), $options: "i" } },
+      ];
+    }
+    if (category) query.category = category;
+    if (priceMin !== undefined || priceMax !== undefined) {
+      query.price = {};
+      if (priceMin !== undefined) query.price.$gte = Number(priceMin);
+      if (priceMax !== undefined) query.price.$lte = Number(priceMax);
+    }
+    const sortMap = {
+      "price-asc": { price: 1 },
+      "price-desc": { price: -1 },
+      "name-asc": { name: 1 },
+      "name-desc": { name: -1 },
+      "stock-asc": { stock: 1 },
+      "stock-desc": { stock: -1 },
+    };
+    const sortOpt = sortMap[sort] || { createdAt: -1 };
 
     const products = await Product.find(query)
-      .sort({ createdAt: -1 })
+      .sort(sortOpt)
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
       .populate("category", "name");

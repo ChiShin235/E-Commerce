@@ -12,16 +12,18 @@ export default function ManagerOrders() {
     const [orders, setOrders] = useState([]);
     const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
     const [statusFilter, setStatusFilter] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         fetchOrders();
-    }, [pagination.page, statusFilter]);
+    }, [pagination.page, statusFilter, searchTerm]);
 
     const fetchOrders = async () => {
         try {
             setLoading(true);
             const params = { page: pagination.page, limit: 10 };
             if (statusFilter) params.status = statusFilter;
+            if (searchTerm.trim()) params.search = searchTerm.trim();
 
             const response = await managerAPI.getOrders(params);
             setOrders(response.data.orders);
@@ -160,12 +162,25 @@ export default function ManagerOrders() {
                     {/* Filters */}
                     <div className="bg-white rounded-xl shadow-md p-6 mb-6">
                         <div className="flex flex-wrap gap-4 items-center">
-                            <label className="text-gray-700 font-medium">Filter by status:</label>
+                            <div className="relative flex-1 min-w-[220px]">
+                                <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                                <input
+                                    type="text"
+                                    placeholder="Search by order ID or customer..."
+                                    value={searchTerm}
+                                    onChange={(e) => {
+                                        setSearchTerm(e.target.value);
+                                        setPagination(prev => ({ ...prev, page: 1 }));
+                                    }}
+                                    className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent text-sm"
+                                />
+                            </div>
+                            <label className="text-gray-700 font-medium">Status:</label>
                             <select
                                 value={statusFilter}
                                 onChange={(e) => {
                                     setStatusFilter(e.target.value);
-                                    setPagination({ ...pagination, page: 1 });
+                                    setPagination(prev => ({ ...prev, page: 1 }));
                                 }}
                                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                             >

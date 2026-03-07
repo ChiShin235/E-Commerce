@@ -15,7 +15,7 @@ export default function ManagerProducts() {
     const [categoryFilter, setCategoryFilter] = useState('');
     const [priceFilter, setPriceFilter] = useState('all');
     const [sortBy, setSortBy] = useState('default');
-    const [currentPage, setCurrentPage] = useState(1);
+    const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteProductId, setDeleteProductId] = useState(null);
@@ -31,15 +31,36 @@ export default function ManagerProducts() {
     });
 
     useEffect(() => {
-        fetchProducts();
         fetchCategories();
     }, []);
+
+    useEffect(() => {
+        fetchProducts();
+    }, [pagination.page, searchTerm, categoryFilter, priceFilter, sortBy]);
 
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            const response = await managerAPI.getProducts({ limit: 10000 });
-            setProducts(response.data.products || response.data || response);
+            const params = { page: pagination.page, limit: 10 };
+            if (searchTerm.trim()) params.search = searchTerm.trim();
+            if (categoryFilter) params.category = categoryFilter;
+            const priceRanges = {
+                '0-300': { priceMax: 299999 },
+                '300-500': { priceMin: 300000, priceMax: 499999 },
+                '500-1000': { priceMin: 500000, priceMax: 999999 },
+                '1000+': { priceMin: 1000000 },
+            };
+            if (priceFilter !== 'all' && priceRanges[priceFilter]) {
+                Object.assign(params, priceRanges[priceFilter]);
+            }
+            if (sortBy !== 'default') params.sort = sortBy;
+            const response = await managerAPI.getProducts(params);
+            setProducts(response.data.products || []);
+            setPagination({
+                page: response.data.page,
+                pages: response.data.pages,
+                total: response.data.total,
+            });
         } catch (error) {
             console.error('Error fetching products:', error);
             toast.error('Failed to load products');
@@ -57,61 +78,7 @@ export default function ManagerProducts() {
         }
     };
 
-    const filteredProducts = products.filter(product => {
-        const matchesSearch =
-            product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            product.description?.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const productCategory = product.category?._id || product.category;
-        const matchesCategory = categoryFilter === '' || productCategory === categoryFilter;
-
-        // Price filter
-        let matchesPrice = true;
-        if (priceFilter !== 'all') {
-            const price = product.price;
-            switch (priceFilter) {
-                case '0-300':
-                    matchesPrice = price < 300000;
-                    break;
-                case '300-500':
-                    matchesPrice = price >= 300000 && price < 500000;
-                    break;
-                case '500-1000':
-                    matchesPrice = price >= 500000 && price < 1000000;
-                    break;
-                case '1000+':
-                    matchesPrice = price >= 1000000;
-                    break;
-                default:
-                    matchesPrice = true;
-            }
-        }
-
-        return matchesSearch && matchesCategory && matchesPrice;
-    });
-
-    const sortedProducts = [...filteredProducts].sort((a, b) => {
-        switch (sortBy) {
-            case 'price-asc':
-                return a.price - b.price;
-            case 'price-desc':
-                return b.price - a.price;
-            case 'name-asc':
-                return a.name.localeCompare(b.name);
-            case 'name-desc':
-                return b.name.localeCompare(a.name);
-            case 'stock-asc':
-                return a.stock - b.stock;
-            case 'stock-desc':
-                return b.stock - a.stock;
-            default:
-                return 0;
-        }
-    });
-
-    const ITEMS_PER_PAGE = 10;
-    const totalPages = Math.ceil(sortedProducts.length / ITEMS_PER_PAGE);
-    const paginatedProducts = sortedProducts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -386,7 +353,7 @@ export default function ManagerProducts() {
                                         type="text"
                                         placeholder="Search products by name..."
                                         value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onChange={(e) => { setSearchTerm(e.target.value); setPagination(prev => ({ ...prev, page: 1 })); }}
                                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                     />
                                 </div>
@@ -394,7 +361,7 @@ export default function ManagerProducts() {
                             <div className="flex gap-3">
                                 <select
                                     value={priceFilter}
-                                    onChange={(e) => setPriceFilter(e.target.value)}
+                                    onChange={(e) => { setPriceFilter(e.target.value); setPagination(prev => ({ ...prev, page: 1 })); }}
                                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                 >
                                     <option value="all">All Prices</option>
@@ -405,7 +372,7 @@ export default function ManagerProducts() {
                                 </select>
                                 <select
                                     value={categoryFilter}
-                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                    onChange={(e) => { setCategoryFilter(e.target.value); setPagination(prev => ({ ...prev, page: 1 })); }}
                                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
                                 >
                                     <option value="">All Categories</option>
@@ -417,7 +384,7 @@ export default function ManagerProducts() {
                                 </select>
                                 <select
                                     value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
+                                    onChange={(e) => { setSortBy(e.target.value); setPagination(prev => ({ ...prev, page: 1 })); }}
                                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent min-w-[150px]"
                                 >
                                     <option value="default">Sort By</option>
@@ -450,7 +417,7 @@ export default function ManagerProducts() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-100">
-                                        {sortedProducts.length === 0 ? (
+                                        {products.length === 0 ? (
                                             <tr>
                                                 <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                                                     <i className="fas fa-box-open text-4xl mb-4 text-gray-300 block"></i>
@@ -458,7 +425,7 @@ export default function ManagerProducts() {
                                                 </td>
                                             </tr>
                                         ) : (
-                                            paginatedProducts.map((product) => (
+                                            products.map((product) => (
                                                 <tr key={product._id} className="hover:bg-gray-50">
                                                     <td className="px-6 py-4">
                                                         <img
@@ -509,24 +476,24 @@ export default function ManagerProducts() {
                                 </table>
                             </div>
                         )}
-                        {!loading && totalPages > 1 && (
+                        {!loading && pagination.pages > 1 && (
                             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50">
                                 <div className="text-sm text-gray-600">
-                                    Showing {Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, sortedProducts.length)} - {Math.min(currentPage * ITEMS_PER_PAGE, sortedProducts.length)} of {sortedProducts.length} results
+                                    Page {pagination.page} / {pagination.pages} &nbsp;·&nbsp; Total <span className="font-semibold text-teal-600">{pagination.total}</span> products
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                    <button onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))} disabled={pagination.page === 1} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
                                         <i className="fas fa-chevron-left text-xs"></i>
                                     </button>
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                        .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                    {Array.from({ length: pagination.pages }, (_, i) => i + 1)
+                                        .filter(p => p === 1 || p === pagination.pages || Math.abs(p - pagination.page) <= 1)
                                         .reduce((acc, p, idx, arr) => { if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...'); acc.push(p); return acc; }, [])
                                         .map((p, idx) => p === '...' ? (
                                             <span key={`dots-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">...</span>
                                         ) : (
-                                            <button key={p} onClick={() => setCurrentPage(p)} className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${currentPage === p ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-300 hover:bg-gray-100'}`}>{p}</button>
+                                            <button key={p} onClick={() => setPagination(prev => ({ ...prev, page: p }))} className={`w-8 h-8 flex items-center justify-center border rounded-lg text-sm font-medium transition ${pagination.page === p ? 'bg-teal-600 text-white border-teal-600' : 'border-gray-300 hover:bg-gray-100'}`}>{p}</button>
                                         ))}
-                                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                    <button onClick={() => setPagination(prev => ({ ...prev, page: Math.min(pagination.pages, prev.page + 1) }))} disabled={pagination.page === pagination.pages} className="w-8 h-8 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed">
                                         <i className="fas fa-chevron-right text-xs"></i>
                                     </button>
                                 </div>

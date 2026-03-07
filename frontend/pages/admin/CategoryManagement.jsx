@@ -69,7 +69,7 @@ export default function CategoryManagement() {
         setShowDeleteModal(true);
     };
 
-    const validateForm = () => {
+    const validateForm = (editId = null) => {
         const newErrors = {};
 
         if (!formData.name.trim()) {
@@ -78,6 +78,11 @@ export default function CategoryManagement() {
             newErrors.name = 'Name must be at least 2 characters';
         } else if (formData.name.trim().length > 100) {
             newErrors.name = 'Name must be at most 100 characters';
+        } else {
+            const isDuplicate = categories.some(
+                c => c.name.trim().toLowerCase() === formData.name.trim().toLowerCase() && c._id !== editId
+            );
+            if (isDuplicate) newErrors.name = 'Category name already exists';
         }
 
         setErrors(newErrors);
@@ -99,7 +104,7 @@ export default function CategoryManagement() {
     };
 
     const handleEditCategory = async () => {
-        if (!validateForm()) return;
+        if (!validateForm(selectedCategory._id)) return;
 
         try {
             await categoryAPI.update(selectedCategory._id, formData);

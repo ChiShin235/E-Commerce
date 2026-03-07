@@ -27,6 +27,14 @@ export const getCategoryById = async (req, res) => {
 export const createCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
+    const existing = await Category.findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+    });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ message: `Category "${name.trim()}" already exists` });
+    }
     const category = new Category({ name, description });
     const newCategory = await category.save();
     res.status(201).json(newCategory);
@@ -39,6 +47,15 @@ export const createCategory = async (req, res) => {
 export const updateCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
+    const existing = await Category.findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+      _id: { $ne: req.params.id },
+    });
+    if (existing) {
+      return res
+        .status(400)
+        .json({ message: `Category "${name.trim()}" already exists` });
+    }
     const updatedCategory = await Category.findByIdAndUpdate(
       req.params.id,
       { name, description },
