@@ -488,14 +488,33 @@ export default function OrderManagement() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200">
-                                            {selectedOrder.items?.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td className="px-4 py-3 text-sm">{item.product?.name || 'N/A'}</td>
-                                                    <td className="px-4 py-3 text-sm">{formatPrice(item.price)}</td>
-                                                    <td className="px-4 py-3 text-sm">{item.quantity}</td>
-                                                    <td className="px-4 py-3 text-sm font-semibold">{formatPrice(item.price * item.quantity)}</td>
-                                                </tr>
-                                            ))}
+                                            {selectedOrder.items?.map((item, index) => {
+                                                const image = item.product?.images?.[0] || item.product?.image;
+                                                return (
+                                                    <tr key={index}>
+                                                        <td className="px-4 py-3 text-sm">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                                                                    {image ? (
+                                                                        <img src={image} alt={item.product?.name} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                                            <i className="fas fa-image text-lg"></i>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="font-medium text-gray-900">{item.product?.name || 'N/A'}</p>
+                                                                    {item.size && <p className="text-xs text-gray-400">Size: {item.size}</p>}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm">{formatPrice(item.price)}</td>
+                                                        <td className="px-4 py-3 text-sm">{item.quantity}</td>
+                                                        <td className="px-4 py-3 text-sm font-semibold">{formatPrice(item.price * item.quantity)}</td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../src/context/AuthContext';
-import { managerAPI } from '../../src/services/api';
+import { managerAPI, orderAPI } from '../../src/services/api';
 import { toast } from 'sonner';
 
 export default function ManagerOrders() {
@@ -13,6 +13,8 @@ export default function ManagerOrders() {
     const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
     const [statusFilter, setStatusFilter] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showDetailModal, setShowDetailModal] = useState(false);
 
     useEffect(() => {
         fetchOrders();
@@ -75,6 +77,17 @@ export default function ManagerOrders() {
             'cancelled': 'Cancelled'
         };
         return statusMap[status] || status;
+    };
+
+    const openDetailModal = async (order) => {
+        try {
+            const response = await orderAPI.getById(order._id);
+            setSelectedOrder(response);
+            setShowDetailModal(true);
+        } catch (error) {
+            console.error('Error fetching order details:', error);
+            toast.error('Failed to load order details');
+        }
     };
 
     return (
@@ -226,7 +239,7 @@ export default function ManagerOrders() {
                                                     Order Date
                                                 </th>
                                                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                    Items
+                                                    Actions
                                                 </th>
                                             </tr>
                                         </thead>
@@ -262,10 +275,13 @@ export default function ManagerOrders() {
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                             {new Date(order.createdAt).toLocaleDateString('vi-VN')}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                            <span className="text-sm font-medium text-gray-900">
-                                                                {order.items?.length || 0}
-                                                            </span>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <button
+                                                                onClick={() => openDetailModal(order)}
+                                                                className="px-3 py-1 bg-teal-600 text-white text-xs rounded-lg hover:bg-teal-700 transition"
+                                                            >
+                                                                <i className="fas fa-eye mr-1"></i> View
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 ))
@@ -315,6 +331,122 @@ export default function ManagerOrders() {
                     </div>
                 </main>
             </div>
+
+            {/* Order Detail Modal */}
+            {showDetailModal && selectedOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                    <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                        <div className="flex justify-between items-center p-6 border-b">
+                            <h3 className="text-xl font-bold text-gray-900">
+                                Order Details - #{selectedOrder.order?._id.slice(-8).toUpperCase()}
+                            </h3>
+                            <button onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-600">
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {/* Order Info */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Customer Email</label>
+                                    <p className="text-gray-900 mt-1">{selectedOrder.order?.email}</p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Order Date</label>
+                                    <p className="text-gray-900 mt-1">{new Date(selectedOrder.order?.createdAt).toLocaleString('vi-VN')}</p>
+                                </div>
+                                <div className="col-span-2">
+                                    <label className="text-sm font-medium text-gray-500">Shipping Address</label>
+                                    <p className="text-gray-900 mt-1">
+                                        {selectedOrder.order?.shippingAddress
+                                            ? typeof selectedOrder.order.shippingAddress === 'string'
+                                                ? selectedOrder.order.shippingAddress
+                                                : `${selectedOrder.order.shippingAddress.firstName || ''} ${selectedOrder.order.shippingAddress.lastName || ''}, ${selectedOrder.order.shippingAddress.phone || ''}, ${selectedOrder.order.shippingAddress.address || ''}, ${selectedOrder.order.shippingAddress.district || ''}, ${selectedOrder.order.shippingAddress.city || ''}`
+                                            : 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Payment Method</label>
+                                    <p className="text-gray-900 mt-1">
+                                        {selectedOrder.order?.paymentMethod === 'vnpay' ? 'VNPay' :
+                                            selectedOrder.order?.paymentMethod === 'cod' ? 'COD (Cash on Delivery)' : 'Not Specified'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500">Status</label>
+                                    <p className="mt-1">
+                                        <span className={`${getStatusColor(selectedOrder.order?.status)} px-2 py-1 rounded-full text-xs font-semibold`}>
+                                            {getStatusText(selectedOrder.order?.status)}
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Order Items */}
+                            <div>
+                                <h4 className="font-semibold text-gray-900 mb-3">Order Items</h4>
+                                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500">Product</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500">Price</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500">Qty</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200">
+                                            {selectedOrder.items?.map((item, index) => {
+                                                const image = item.product?.images?.[0] || item.product?.image;
+                                                return (
+                                                    <tr key={index}>
+                                                        <td className="px-4 py-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
+                                                                    {image ? (
+                                                                        <img src={image} alt={item.product?.name} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                                            <i className="fas fa-image text-lg"></i>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-gray-900">{item.product?.name || 'N/A'}</p>
+                                                                    {item.size && <p className="text-xs text-gray-400">Size: {item.size}</p>}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-sm">{formatPrice(item.price)}</td>
+                                                        <td className="px-4 py-3 text-sm">{item.quantity}</td>
+                                                        <td className="px-4 py-3 text-sm font-semibold">{formatPrice(item.price * item.quantity)}</td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* Total */}
+                            <div className="border-t pt-4 flex justify-between items-center">
+                                <span className="text-lg font-semibold text-gray-900">Total Amount</span>
+                                <span className="text-2xl font-bold text-teal-600">{formatPrice(selectedOrder.order?.totalAmount)}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end p-6 border-t">
+                            <button
+                                onClick={() => setShowDetailModal(false)}
+                                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

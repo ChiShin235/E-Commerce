@@ -16,6 +16,7 @@ export default function BestSeller() {
     const [favorites, setFavorites] = useState(new Set());
     const [quickViewProduct, setQuickViewProduct] = useState(null);
     const cardRefs = useRef([]);
+    const productsRef = useRef(null);
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
@@ -199,6 +200,9 @@ export default function BestSeller() {
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
+        if (productsRef.current) {
+            productsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     };
 
     return (
@@ -228,7 +232,7 @@ export default function BestSeller() {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div ref={productsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Filters Bar */}
                 <div className="flex flex-wrap gap-4 mb-8 items-center justify-between">
                     {/* Left side filters */}
@@ -413,7 +417,7 @@ export default function BestSeller() {
 
                                             {/* Best Seller Badge */}
                                             {product.totalSold > 0 && (
-                                                <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
+                                                <div className="absolute top-2 left-2 bg-gray-500 text-white text-xs font-bold px-2 py-1 rounded z-10">
                                                     🔥 {product.totalSold} sold
                                                 </div>
                                             )}

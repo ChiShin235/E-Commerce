@@ -44,6 +44,7 @@ import ManagerCategories from '../pages/manager/ManagerCategories';
 import StaffDashboard from '../pages/staff/StaffDashboard';
 import StaffOrder from '../pages/staff/StaffOder';
 import StaffLowStock from '../pages/staff/StaffLowStock';
+import ProductStaff from '../pages/staff/ProductStaff';
 
 function App() {
   return (
@@ -144,6 +145,11 @@ function App() {
             <Route path="/staff/orders" element={
               <StaffRoute>
                 <StaffOrder />
+              </StaffRoute>
+            } />
+            <Route path="/staff/products" element={
+              <StaffRoute>
+                <ProductStaff />
               </StaffRoute>
             } />
             <Route path="/staff/low-stock" element={

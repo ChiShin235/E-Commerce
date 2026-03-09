@@ -14,6 +14,7 @@ export default function Cart() {
     const cartItems = rawCartItems.filter(item => item?.product != null);
     const { isAuthenticated } = useAuth();
     const [relatedProducts, setRelatedProducts] = useState([]);
+    const [showLoginConfirm, setShowLoginConfirm] = useState(false);
     const cardRefs = useRef([]);
     const scrollContainerRef = useRef(null);
 
@@ -79,12 +80,10 @@ export default function Cart() {
     };
 
     const handleCheckout = () => {
-        // Check if user is logged in
         if (!isAuthenticated) {
-            navigate('/login');
+            setShowLoginConfirm(true);
             return;
         }
-        // Navigate to checkout page
         navigate('/order');
     };
 
@@ -329,6 +328,37 @@ export default function Cart() {
             </div>
 
             <Footer />
+
+            {/* Login Confirmation Modal */}
+            {showLoginConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4">
+                        <div className="flex justify-center mb-4">
+                            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center">
+                                <ShoppingBag size={28} className="text-black-500" />
+                            </div>
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-900 mb-2 text-center">You're not logged in</h2>
+                        <p className="text-gray-600 text-center mb-6">
+                            Would you like to log in to proceed with checkout?
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowLoginConfirm(false)}
+                                className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                            >
+                                Stay
+                            </button>
+                            <button
+                                onClick={() => { setShowLoginConfirm(false); navigate('/login', { state: { from: '/cart' } }); }}
+                                className="flex-1 bg-black text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors"
+                            >
+                                Log In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

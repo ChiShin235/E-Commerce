@@ -39,8 +39,12 @@ export default function Order() {
     };
 
     const effectiveCartItems = useMemo(() => {
-        const items = serverCartItems !== null ? serverCartItems : cartItems;
-        return items.filter(item => item?.product != null);
+        // Use server cart if it has items; otherwise fall back to local cart
+        // (server may be empty right after login because sync hasn't completed yet)
+        if (serverCartItems !== null && serverCartItems.length > 0) {
+            return serverCartItems.filter(item => item?.product != null);
+        }
+        return cartItems.filter(item => item?.product != null);
     }, [serverCartItems, cartItems]);
 
     const subtotal = useMemo(() => {
@@ -157,7 +161,7 @@ export default function Order() {
                     return;
                 }
 
-                clearCart();
+                // Do NOT clearCart() here — cart is cleared after VNPay confirms payment (IPN/return)
                 window.location.href = paymentUrl;
                 return;
             }
@@ -180,7 +184,7 @@ export default function Order() {
 
     const total = subtotal + shippingFee;
 
-    if (!cartLoading && effectiveCartItems.length === 0) {
+    if (!cartLoading && !loading && effectiveCartItems.length === 0) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">

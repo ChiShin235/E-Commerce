@@ -128,7 +128,7 @@ export default function AuthPage() {
                         } else if (userRole === 'staff') {
                             navigate('/staff/dashboard', { replace: true });
                         } else {
-                            navigate('/', { replace: true });
+                            navigate(location.state?.from || '/', { replace: true });
                         }
                     }, 100);
                 } else {

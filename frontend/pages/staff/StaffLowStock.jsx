@@ -84,6 +84,12 @@ export default function StaffLowStock() {
                         <i className="fas fa-shopping-cart mr-3"></i> Orders
                     </button>
                     <button
+                        onClick={() => navigate('/staff/products')}
+                        className="w-full flex items-center px-6 py-3 hover:bg-teal-700 transition text-left"
+                    >
+                        <i className="fas fa-tag mr-3"></i> Products
+                    </button>
+                    <button
                         onClick={() => navigate('/staff/low-stock')}
                         className="w-full flex items-center px-6 py-3 bg-teal-600 border-l-4 border-teal-400 transition text-left"
                     >
